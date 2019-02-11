@@ -366,11 +366,14 @@ func (g *GoCfg) AsBool(s string) bool {
 }
 
 func (c *GoCfg) Render(s string) string {
-	t, err := template.New("gocfg").Funcs(sprig.GenericFuncMap()).Parse(s)
-	lg.FatalIfErr(err, t.Name(), "failed to render string")
-	buf := bytes.NewBuffer(nil)
-	lg.FatalIfErr(t.Execute(buf, c.v.AllSettings()), t.Name(), "failed to render string")
-	return buf.String()
+	if strings.Contains(s, "{{") {
+		t, err := template.New("gocfg").Funcs(sprig.GenericFuncMap()).Parse(s)
+		lg.FatalIfErr(err, t.Name(), "failed to render string")
+		buf := bytes.NewBuffer(nil)
+		lg.FatalIfErr(t.Execute(buf, c.v.AllSettings()), t.Name(), "failed to render string")
+		return buf.String()
+	}
+	return s
 }
 
 func (c *GoCfg) ScanAndReplace(r io.Reader, replacements ...string) {
