@@ -6,7 +6,7 @@ github.com/Masterminds/sprig
 github.com/aokoli/goutils
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
-# github.com/gofunct/gocfg v0.0.0-20190211211805-37fe2b927646
+# github.com/gofunct/gocfg v0.0.0-20190211212950-0859d0cbc70c
 github.com/gofunct/gocfg
 # github.com/gofunct/lg v0.0.0-20190211160313-a032f7d7c89c
 github.com/gofunct/lg

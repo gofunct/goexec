@@ -36,7 +36,7 @@ type GoCfg struct {
 	*afero.Afero
 }
 
-func New(cfgFile string) *GoCfg {
+func New(cfgFile string, envprefix string) *GoCfg {
 
 	g := &GoCfg{v: viper.GetViper(), Q: input.DefaultUI(), Afero: fs}
 	g.v.AutomaticEnv()
@@ -48,6 +48,9 @@ func New(cfgFile string) *GoCfg {
 		g.v.SetConfigName(".config")
 		g.v.SetConfigType("yaml")
 		lg.WarnIfErr(errors.New("failed to read config file, reading defaults"), "defaults", "path: PWD, name: .config, type: yaml")
+	}
+	if envprefix != "" {
+		g.v.SetEnvPrefix(envprefix)
 	}
 	g.v.SetFs(g.Afero)
 	// If a config file is found, read it in.
@@ -108,6 +111,14 @@ func (g *GoCfg) Sync() {
 			lg.DebugIfErr(os.Setenv(strings.ToUpper(k), val), k, "failed to bind "+val)
 		}
 	}
+}
+
+func (g *GoCfg) ReadFrom(reader io.Reader) error {
+	return g.v.ReadConfig(reader)
+}
+
+func (g *GoCfg) ReadIn() error {
+	return g.v.ReadInConfig()
 }
 
 func (g *GoCfg) Set(key string, val interface{}) {
