@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
 	"github.com/gofunct/lg"
@@ -45,6 +46,7 @@ func New(cfgFile string) *GoCfg {
 		g.AddConfigPath(os.Getenv("PWD"))
 		g.SetConfigName(".config")
 		g.SetConfigType("yaml")
+		lg.WarnIfErr(errors.New("failed to read config file, reading defaults"), "defaults", "path: PWD, name: .config, type: yaml")
 	}
 	g.SetFs(g.Afero)
 	// If a config file is found, read it in.

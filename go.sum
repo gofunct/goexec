@@ -74,6 +74,8 @@ github.com/gofunct/common v0.0.0-20190129002835-dc0c14ef193d/go.mod h1:g2iVspKPk
 github.com/gofunct/common v0.0.0-20190131174352-fd058c7fbf22/go.mod h1:nHYjI94la38LbMyviEg6MGErHtS7xVJh6LVM2kc0Qog=
 github.com/gofunct/gocfg v0.0.0-20190211171052-d63c3d916337 h1:rg5zH06iLpNsTRhpWdrib/u/nxFSWy5fCUJ/N6T9mck=
 github.com/gofunct/gocfg v0.0.0-20190211171052-d63c3d916337/go.mod h1:59bpOO+o4mpIJ1SySiMc4deAGNvjieZwpU7SvZN0MlE=
+github.com/gofunct/gocfg v0.0.0-20190211172126-0451ffc808d3 h1:/Ma8OvZagysJt0TnUZYnq0VaZDaMmizFPZ69bIOAB8w=
+github.com/gofunct/gocfg v0.0.0-20190211172126-0451ffc808d3/go.mod h1:59bpOO+o4mpIJ1SySiMc4deAGNvjieZwpU7SvZN0MlE=
 github.com/gofunct/gofs v0.0.0-20190201013541-e55c00d07c4a/go.mod h1:SwqZUCCDs/cTaswlWvEsBJ/rf5N7UTAsmJ/cLJKDudg=
 github.com/gofunct/gofs v0.0.0-20190201225821-ff30dd2f57cc/go.mod h1:AKueBcYI+rC8kl6vSPo5/VQ12DD7R9VpLpa6/MBv2jk=
 github.com/gofunct/lg v0.0.0-20190211160313-a032f7d7c89c h1:cTlmHPOgInDJGp0Bnx2H0U7yF9V2335FcBW0XNICdFs=
