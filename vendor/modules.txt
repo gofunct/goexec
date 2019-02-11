@@ -1,0 +1,79 @@
+# github.com/Masterminds/semver v1.4.2
+github.com/Masterminds/semver
+# github.com/Masterminds/sprig v2.17.1+incompatible
+github.com/Masterminds/sprig
+# github.com/aokoli/goutils v1.1.0
+github.com/aokoli/goutils
+# github.com/fsnotify/fsnotify v1.4.7
+github.com/fsnotify/fsnotify
+# github.com/gofunct/gocfg v0.0.0-20190211171052-d63c3d916337
+github.com/gofunct/gocfg
+# github.com/gofunct/lg v0.0.0-20190211160313-a032f7d7c89c
+github.com/gofunct/lg
+# github.com/google/uuid v1.1.0
+github.com/google/uuid
+# github.com/hashicorp/hcl v1.0.0
+github.com/hashicorp/hcl
+github.com/hashicorp/hcl/hcl/printer
+github.com/hashicorp/hcl/hcl/ast
+github.com/hashicorp/hcl/hcl/parser
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/hcl/scanner
+github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/json/scanner
+github.com/hashicorp/hcl/json/token
+# github.com/huandu/xstrings v1.2.0
+github.com/huandu/xstrings
+# github.com/imdario/mergo v0.3.7
+github.com/imdario/mergo
+# github.com/inconshreveable/mousetrap v1.0.0
+github.com/inconshreveable/mousetrap
+# github.com/jessevdk/go-assets v0.0.0-20160921144138-4f4301a06e15
+github.com/jessevdk/go-assets
+# github.com/magiconair/properties v1.8.0
+github.com/magiconair/properties
+# github.com/mitchellh/mapstructure v1.1.2
+github.com/mitchellh/mapstructure
+# github.com/pelletier/go-toml v1.2.0
+github.com/pelletier/go-toml
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# github.com/spf13/afero v1.2.1
+github.com/spf13/afero
+github.com/spf13/afero/mem
+# github.com/spf13/cast v1.3.0
+github.com/spf13/cast
+# github.com/spf13/cobra v0.0.3
+github.com/spf13/cobra
+# github.com/spf13/jwalterweatherman v1.0.0
+github.com/spf13/jwalterweatherman
+# github.com/spf13/pflag v1.0.3
+github.com/spf13/pflag
+# github.com/spf13/viper v1.3.1
+github.com/spf13/viper
+# github.com/tcnksm/go-input v0.0.0-20180404061846-548a7d7a8ee8
+github.com/tcnksm/go-input
+# go.uber.org/atomic v1.3.2
+go.uber.org/atomic
+# go.uber.org/multierr v1.1.0
+go.uber.org/multierr
+# go.uber.org/zap v1.9.1
+go.uber.org/zap
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/zapcore
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+# golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613
+golang.org/x/crypto/scrypt
+golang.org/x/crypto/ssh/terminal
+golang.org/x/crypto/pbkdf2
+# golang.org/x/sys v0.0.0-20190129075346-302c3dd5f1cc
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/text v0.3.0
+golang.org/x/text/transform
+golang.org/x/text/unicode/norm
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2
