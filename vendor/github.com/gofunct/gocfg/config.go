@@ -57,7 +57,7 @@ func New(cfgFile string, envprefix string) *GoCfg {
 	if err := g.v.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", g.v.ConfigFileUsed())
 	} else {
-		lg.FatalIfErr(err, g.v.ConfigFileUsed(), "failed to read in config")
+		lg.WarnIfErr(err, g.v.ConfigFileUsed(), "failed to read in config")
 	}
 	return g
 }

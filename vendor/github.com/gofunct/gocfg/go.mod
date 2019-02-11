@@ -4,7 +4,7 @@ require (
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.17.1+incompatible
 	github.com/aokoli/goutils v1.1.0 // indirect
-	github.com/gofunct/lg v0.0.0-20190211160313-a032f7d7c89c
+	github.com/gofunct/lg v0.0.0-20190211224322-b5bc557ba5c4
 	github.com/google/uuid v1.1.0 // indirect
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
