@@ -12,6 +12,7 @@ require (
 	github.com/jessevdk/go-assets v0.0.0-20160921144138-4f4301a06e15
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
+	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.3.1
 	github.com/tcnksm/go-input v0.0.0-20180404061846-548a7d7a8ee8
 	gopkg.in/yaml.v2 v2.2.2

@@ -12,6 +12,7 @@ import (
 	"github.com/jessevdk/go-assets"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/tcnksm/go-input"
 	"gopkg.in/yaml.v2"
@@ -31,29 +32,29 @@ var (
 
 type GoCfg struct {
 	Q *input.UI
-	*viper.Viper
+	v *viper.Viper
 	*afero.Afero
 }
 
 func New(cfgFile string) *GoCfg {
 
-	g := &GoCfg{Viper: viper.GetViper(), Q: input.DefaultUI(), Afero: fs}
-	g.AutomaticEnv()
+	g := &GoCfg{v: viper.GetViper(), Q: input.DefaultUI(), Afero: fs}
+	g.v.AutomaticEnv()
 	if cfgFile != "" {
-		g.SetConfigFile(cfgFile)
+		g.v.SetConfigFile(cfgFile)
 	} else {
 		// Search config in home directory with name ".temp" (without extension).
-		g.AddConfigPath(os.Getenv("PWD"))
-		g.SetConfigName(".config")
-		g.SetConfigType("yaml")
+		g.v.AddConfigPath(os.Getenv("PWD"))
+		g.v.SetConfigName(".config")
+		g.v.SetConfigType("yaml")
 		lg.WarnIfErr(errors.New("failed to read config file, reading defaults"), "defaults", "path: PWD, name: .config, type: yaml")
 	}
-	g.SetFs(g.Afero)
+	g.v.SetFs(g.Afero)
 	// If a config file is found, read it in.
-	if err := g.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", g.ConfigFileUsed())
+	if err := g.v.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", g.v.ConfigFileUsed())
 	} else {
-		lg.FatalIfErr(err, g.ConfigFileUsed(), "failed to read in config")
+		lg.FatalIfErr(err, g.v.ConfigFileUsed(), "failed to read in config")
 	}
 	return g
 }
@@ -61,33 +62,33 @@ func New(cfgFile string) *GoCfg {
 func (g *GoCfg) BindCmd(root *cobra.Command) func() {
 	return func() {
 		if root.HasAvailableFlags() {
-			lg.DebugIfErr(g.BindPFlags(root.Flags()), root.Name(), "failed to bind config to Flags()")
+			lg.DebugIfErr(g.v.BindPFlags(root.Flags()), root.Name(), "failed to bind config to Flags()")
 		}
 		if root.HasAvailablePersistentFlags() {
-			lg.DebugIfErr(g.BindPFlags(root.PersistentFlags()), root.Name(), "failed to bind config to PersistentFlags()")
+			lg.DebugIfErr(g.v.BindPFlags(root.PersistentFlags()), root.Name(), "failed to bind config to PersistentFlags()")
 		}
 		if root.HasAvailableLocalFlags() {
-			lg.DebugIfErr(g.BindPFlags(root.LocalFlags()), root.Name(), "failed to bind config to LocalFlags()")
-			lg.DebugIfErr(g.BindPFlags(root.LocalNonPersistentFlags()), root.Name(), "failed to bind config to LocalNonPersistentFlags()")
+			lg.DebugIfErr(g.v.BindPFlags(root.LocalFlags()), root.Name(), "failed to bind config to LocalFlags()")
+			lg.DebugIfErr(g.v.BindPFlags(root.LocalNonPersistentFlags()), root.Name(), "failed to bind config to LocalNonPersistentFlags()")
 		}
 		if root.HasAvailableInheritedFlags() {
-			lg.DebugIfErr(g.BindPFlags(root.InheritedFlags()), root.Name(), "failed to bind config to InheritedFlags()")
+			lg.DebugIfErr(g.v.BindPFlags(root.InheritedFlags()), root.Name(), "failed to bind config to InheritedFlags()")
 		}
 		if root.HasAvailableSubCommands() {
 			for _, cmd := range root.Commands() {
 
 				if cmd.HasAvailableFlags() {
-					lg.DebugIfErr(g.BindPFlags(cmd.Flags()), cmd.Name(), "failed to bind config to Flags()")
+					lg.DebugIfErr(g.v.BindPFlags(cmd.Flags()), cmd.Name(), "failed to bind config to Flags()")
 				}
 				if cmd.HasAvailablePersistentFlags() {
-					lg.DebugIfErr(g.BindPFlags(cmd.PersistentFlags()), cmd.Name(), "failed to bind config to PersistentFlags()")
+					lg.DebugIfErr(g.v.BindPFlags(cmd.PersistentFlags()), cmd.Name(), "failed to bind config to PersistentFlags()")
 				}
 				if cmd.HasAvailableLocalFlags() {
-					lg.DebugIfErr(g.BindPFlags(cmd.LocalFlags()), cmd.Name(), "failed to bind config to LocalFlags()")
-					lg.DebugIfErr(g.BindPFlags(cmd.LocalNonPersistentFlags()), cmd.Name(), "failed to bind config to LocalNonPersistentFlags()")
+					lg.DebugIfErr(g.v.BindPFlags(cmd.LocalFlags()), cmd.Name(), "failed to bind config to LocalFlags()")
+					lg.DebugIfErr(g.v.BindPFlags(cmd.LocalNonPersistentFlags()), cmd.Name(), "failed to bind config to LocalNonPersistentFlags()")
 				}
 				if cmd.HasAvailableInheritedFlags() {
-					lg.DebugIfErr(g.BindPFlags(cmd.InheritedFlags()), cmd.Name(), "failed to bind config to InheritedFlags()")
+					lg.DebugIfErr(g.v.BindPFlags(cmd.InheritedFlags()), cmd.Name(), "failed to bind config to InheritedFlags()")
 				}
 
 			}
@@ -99,9 +100,9 @@ func (g *GoCfg) BindCmd(root *cobra.Command) func() {
 func (g *GoCfg) Sync() {
 	for _, e := range os.Environ() {
 		sp := strings.Split(e, "=")
-		g.SetDefault(strings.ToLower(sp[0]), sp[1])
+		g.v.SetDefault(strings.ToLower(sp[0]), sp[1])
 	}
-	for k, g := range g.AllSettings() {
+	for k, g := range g.v.AllSettings() {
 		val, ok := g.(string)
 		if ok {
 			lg.DebugIfErr(os.Setenv(strings.ToUpper(k), val), k, "failed to bind "+val)
@@ -109,92 +110,101 @@ func (g *GoCfg) Sync() {
 	}
 }
 
-func (g *GoCfg) JsonSettings() []byte {
-	return (g.ToPrettyJson(g.AllSettings()))
+func (g *GoCfg) Set(key string, val interface{}) {
+	g.Set(key, val)
 }
 
-func (g *GoCfg) JsonSettingsString() string {
-	return (g.ToPrettyJsonString(g.AllSettings()))
+func (g *GoCfg) Get(key string) interface{} {
+	return g.v.Get(key)
+}
+func (g *GoCfg) GetString(key string) string {
+	if !g.v.InConfig(key) {
+		return g.Prompt(enquire(key))
+	}
+	return g.v.GetString(key)
 }
 
-func (g *GoCfg) YamlSettings() []byte {
-	bits, err := yaml.Marshal(g.AllSettings())
-	lg.WarnIfErr(err, g.ConfigFileUsed(), "failed to unmarshal config to yaml")
-	return bits
+func (g *GoCfg) GetBool(key string) bool {
+	if !g.v.InConfig(key) {
+		return g.PromptBool(enquire(key))
+	}
+	return g.v.GetBool(key)
+}
+
+func (g *GoCfg) GetStringSlice(key string, require bool) []string {
+	if !g.v.InConfig(key) {
+		return g.PromptCSV(enquire(key))
+	}
+	return g.v.GetStringSlice(key)
+}
+
+func (g *GoCfg) GetStringMapString(key string) map[string]string {
+	if !g.v.InConfig(key) {
+		return g.PromptMap(enquire(key))
+	}
+	return g.v.GetStringMapString(key)
+}
+
+func (g *GoCfg) BindFlagVal(key string, val viper.FlagValue) error {
+	return g.v.BindFlagValue(key, val)
+}
+
+func (g *GoCfg) BindFPflags(set *pflag.FlagSet) error {
+	return g.v.BindPFlags(set)
+}
+
+func (g *GoCfg) Unmarshal(obj interface{}) error {
+	return g.v.Unmarshal(obj)
+}
+
+func (g *GoCfg) EnvPrefix(s string) {
+	g.v.SetEnvPrefix(s)
+}
+
+func (g *GoCfg) SetDefault(key string, val interface{}) {
+	g.v.SetDefault(key, val)
 }
 
 // Prompt prompts user for input with default value.
 func (g *GoCfg) Prompt(key, question string) string {
-	switch {
-	case g.InConfig(key):
-		return g.GetString(key)
-	case os.Getenv(strings.ToUpper(key)) != "":
-		return os.Getenv(strings.ToUpper(key))
-	}
-
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
+	fmt.Print("string | " + question)
 	text, _ := reader.ReadString('\n')
-	g.Set(key, text)
+	g.v.Set(key, text)
 	return text
 }
 
 // Prompt prompts user for input with default value.
-func (g *GoCfg) PromptSet(key string, question string) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
-	text, _ := reader.ReadString('\n')
-	_ = os.Setenv(strings.ToUpper(key), text)
-	g.Set(key, text)
-}
-
-// Prompt prompts user for input with default value.
 func (g *GoCfg) PromptCSV(key string, question string) []string {
-	switch {
-	case g.InConfig(key):
-		return g.GetStringSlice(key)
-	}
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
+	fmt.Print("csv | x, y, z | " + question)
 	text, _ := reader.ReadString('\n')
 	txtCsv, err := g.AsCSV(text)
 	lg.DebugIfErr(err, "prompt csv", "failed to read comma seperated values from input")
-	g.Set(key, txtCsv)
+	g.v.SetDefault(key, txtCsv)
 	return txtCsv
 }
 
 // Prompt prompts user for input with default value.
-func (g *GoCfg) PromptSetCSV(key string, question string) {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
-	text, _ := reader.ReadString('\n')
-	txtCsv, err := g.AsCSV(text)
-	lg.DebugIfErr(err, "prompt csv", "failed to read comma seperated values from input")
-	g.Set(key, txtCsv)
-}
-
-// Prompt prompts user for input with default value.
 func (g *GoCfg) PromptMap(key string, question string) map[string]string {
-	switch {
-	case g.InConfig(key):
-		return g.GetStringMapString(key)
-	}
+
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
+	fmt.Print("map | a=b,c=d | " + question)
 	text, _ := reader.ReadString('\n')
 	txtMap, err := g.AsMap(text)
 	lg.DebugIfErr(err, "prompt map", "failed to read comma seperated values from input, seperate map values with : or = and map entries with ,")
+	g.v.SetDefault(key, txtMap)
 	return txtMap
 }
 
 // Prompt prompts user for input with default value.
-func (g *GoCfg) PromptSetMap(key string, question string) {
+func (g *GoCfg) PromptBool(key string, question string) bool {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print(question)
+	fmt.Print("bool | y/n | " + question)
 	text, _ := reader.ReadString('\n')
-	txtMap, err := g.AsMap(text)
-	lg.DebugIfErr(err, "prompt map", "failed to read comma seperated values from input, seperate map values with : or = and map entries with ,")
-	g.Set(key, txtMap)
+	ans := g.AsBool(text)
+	g.v.SetDefault(key, ans)
+	return ans
 }
 
 // Template reads a go template and writes it to dist given data.
@@ -215,7 +225,7 @@ func (g *GoCfg) ProcessAsset(t *template.Template, file *assets.File) {
 		lg.WarnIfErr(err, file.Name(), "Could not create file for writing")
 	}
 	defer f.Close()
-	err = tpl.Execute(f, g.AllSettings())
+	err = tpl.Execute(f, g.v.AllSettings())
 	if err != nil {
 		lg.WarnIfErr(err, file.Name(), "Could not execute template")
 	}
@@ -238,7 +248,7 @@ func (g *GoCfg) WalkTemplates(dir string, outDir string) {
 			if err != nil {
 				return err
 			}
-			return newt.Execute(f, g.AllSettings())
+			return newt.Execute(f, g.v.AllSettings())
 		}
 		return nil
 	}); err != nil {
@@ -264,14 +274,28 @@ func (g *GoCfg) CopyFile(srcfile, dstfile string) (*afero.File, error) {
 	return &dstF, fs.Chmod(dstfile, 0755)
 }
 
+func (g *GoCfg) JsonSettings() []byte {
+	return (g.toPrettyJson(g.v.AllSettings()))
+}
+
+func (g *GoCfg) JsonSettingsString() string {
+	return (g.toPrettyJsonString(g.v.AllSettings()))
+}
+
+func (g *GoCfg) YamlSettings() []byte {
+	bits, err := yaml.Marshal(g.v.AllSettings())
+	lg.WarnIfErr(err, g.v.ConfigFileUsed(), "failed to unmarshal config to yaml")
+	return bits
+}
+
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func (g *GoCfg) ToPrettyJsonString(obj interface{}) string {
+func (g *GoCfg) toPrettyJsonString(obj interface{}) string {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return string(output)
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func (g *GoCfg) ToPrettyJson(obj interface{}) []byte {
+func (g *GoCfg) toPrettyJson(obj interface{}) []byte {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return output
 }
@@ -313,11 +337,28 @@ func (g *GoCfg) AsMap(val string) (map[string]string, error) {
 	return m, nil
 }
 
+var validBoolT = []string{"Y", "y", "t", "T"}
+var validBoolF = []string{"N", "n", "f", "F"}
+
+func (g *GoCfg) AsBool(s string) bool {
+	for _, v := range validBoolT {
+		if s == v {
+			return true
+		}
+	}
+	for _, v := range validBoolF {
+		if s == v {
+			return false
+		}
+	}
+	panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)))
+}
+
 func (c *GoCfg) Render(s string) string {
 	t, err := template.New("gocfg").Funcs(sprig.GenericFuncMap()).Parse(s)
 	lg.FatalIfErr(err, t.Name(), "failed to render string")
 	buf := bytes.NewBuffer(nil)
-	lg.FatalIfErr(t.Execute(buf, c.AllSettings()), t.Name(), "failed to render string")
+	lg.FatalIfErr(t.Execute(buf, c.v.AllSettings()), t.Name(), "failed to render string")
 	return buf.String()
 }
 
@@ -335,4 +376,8 @@ func (c *GoCfg) ScanAndReplaceBytes(r io.Reader, replacements ...string) {
 	for scanner.Scan() {
 		rep.Replace(fmt.Sprintf("%s", scanner.Bytes()))
 	}
+}
+
+func enquire(key string) (string, string) {
+	return key, fmt.Sprintf("required | please set %s:", key)
 }
