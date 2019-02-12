@@ -130,8 +130,8 @@ func NewCommand(name string, usage string, version string) *Command {
 		Env:    os.Environ(),
 		Dir:    cmd.dir,
 		Stdin:  os.Stdin,
-		Stdout: cmd.flags.OutOrStdout(),
-		Stderr: cmd.flags.OutOrStderr(),
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
 	}
 	cmd.exe = c
 	if err := cmd.v.ReadInConfig(); err == nil {
@@ -215,10 +215,6 @@ func (c *Command) Flags() *pflag.FlagSet {
 	return c.flags.PersistentFlags()
 }
 
-func (c *Command) SetOutput(w io.Writer) {
-	c.flags.SetOutput(w)
-}
-
 func (c *Command) Run() error {
 	return c.exe.Run()
 }
@@ -229,14 +225,6 @@ func (c *Command) GetReader() io.Reader {
 
 func (c *Command) MultiRead(r io.Reader) {
 	c.exe.Stdin = io.MultiReader(c.exe.Stdin, r)
-}
-
-func (c *Command) OutOrStdOut() io.Writer {
-	return c.flags.OutOrStdout()
-}
-
-func (c *Command) OutOrStdErr() io.Writer {
-	return c.flags.OutOrStderr()
 }
 
 func (c *Command) AddScript(script string) {
@@ -547,10 +535,7 @@ func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) string {
 }
 
 func (c *Command) Println(msg string) {
-	_, err := fmt.Fprintln(c.OutOrStdErr(), msg)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	fmt.Println(msg)
 }
 
 func (c *Command) Exit(msg string) {
