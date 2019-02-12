@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -54,19 +55,11 @@ type Command struct {
 	cfgFile   string
 	envPrefix string
 	dir       string
-	reader    io.Reader
-	writer    io.Writer
 	cronz     *cron.Cron
 	flags     *cobra.Command
 }
 
-func NewCommand(name string, usage string, version string, reader io.Reader, writer io.Writer) *Command {
-	if reader == nil {
-		reader = os.Stdin
-	}
-	if writer == nil {
-		writer = os.Stdout
-	}
+func NewCommand(name string, usage string, version string) *Command {
 	cmd := &Command{
 		flags: &cobra.Command{
 			Use:     name,
@@ -78,9 +71,8 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 		},
 		cronz: cron.New(),
 	}
-	cmd.flags.SetOutput(writer)
 
-	cmd.Flags().StringVar(&cmd.cfgFile, "config", "", "path to config file")
+	cmd.Flags().StringVar(&cmd.cfgFile, "config", "goexec.yaml", "path to config file")
 	cmd.Flags().StringVar(&cmd.dir, "dir", ".", "directory to execute in")
 	cmd.Flags().StringVar(&cmd.envPrefix, "envprefix", "", "prefix to environmental variables")
 	cmd.v = viper.New()
@@ -138,15 +130,15 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 		Args:   []string{"bash", "-c"},
 		Env:    os.Environ(),
 		Dir:    cmd.dir,
-		Stdin:  reader,
-		Stdout: writer,
-		Stderr: writer,
+		Stdin:  os.Stdin,
+		Stdout: cmd.flags.OutOrStdout(),
+		Stderr: cmd.flags.OutOrStderr(),
 	}
 	cmd.exe = c
 	if err := cmd.v.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", cmd.v.ConfigFileUsed())
 	} else {
-		fmt.Println(err.Error())
+		cmd.PrintErr(err, "failed to read in config")
 	}
 	return cmd
 }
@@ -220,6 +212,16 @@ func (c *Command) Act(name string, usg string, action ActFunc) {
 	c.Sync()
 }
 
+func (c *Command) HandlerFunc() http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
+		c.MultiRead(r.Body)
+		c.SetOutput(w)
+	}
+}
+
+func (c *Command) SetOutput(w io.Writer) {
+	c.flags.SetOutput(w)
+}
 func (c *Command) Flags() *pflag.FlagSet {
 	return c.flags.PersistentFlags()
 }
@@ -236,15 +238,16 @@ func (c *Command) GetReader() io.Reader {
 	return c.exe.Stdin
 }
 
-func (c *Command) MultiWrite(w io.Writer) {
-	c.exe.Stdout = io.MultiWriter(c.exe.Stdout, w)
-}
 func (c *Command) MultiRead(r io.Reader) {
 	c.exe.Stdin = io.MultiReader(c.exe.Stdin, r)
 }
 
-func (c *Command) GetWriter() io.Writer {
-	return c.exe.Stdout
+func (c *Command) OutOrStdOut() io.Writer {
+	return c.flags.OutOrStdout()
+}
+
+func (c *Command) OutOrStdErr() io.Writer {
+	return c.flags.OutOrStderr()
 }
 
 func (c *Command) AddScript(script string) {
@@ -275,6 +278,7 @@ func (c *Command) SetDir(path string) {
 	c.exe.Dir = path
 }
 
+
 func (c *Command) Sync() {
 	for _, e := range os.Environ() {
 		sp := strings.Split(e, "=")
@@ -283,7 +287,7 @@ func (c *Command) Sync() {
 	for k, v := range c.v.AllSettings() {
 		val, ok := v.(string)
 		if ok {
-			c.Println(os.Setenv(strings.ToUpper(k), val).Error())
+			c.PrintErr(os.Setenv(k, val), "failed to bind config to env variable")
 		}
 	}
 }
@@ -555,11 +559,14 @@ func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) string {
 }
 
 func (c *Command) Println(msg string) {
-	c.Println(msg)
+	_, err  := fmt.Fprintln(c.OutOrStdErr(), msg)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
 
 func (c *Command) Exit(msg string) {
-	c.Println(msg)
+	fmt.Println(msg)
 	os.Exit(1)
 }
 
@@ -567,6 +574,13 @@ func (c *Command) Panic(err error, msg string) {
 	if err != nil {
 		c.Println(msg)
 		panic(err.Error())
+	}
+}
+
+func (c *Command) PrintErr(err error, msg string) {
+	if err != nil {
+		c.Println(err.Error())
+		c.Println(msg)
 	}
 }
 
