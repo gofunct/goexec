@@ -365,6 +365,14 @@ func (g *GoCfg) AsBool(s string) bool {
 	panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)))
 }
 
+func (c *GoCfg) Sub(key string) *GoCfg {
+	return &GoCfg{
+		Q:     c.Q,
+		v:     c.v.Sub(key),
+		Afero: c.Afero,
+	}
+}
+
 func (c *GoCfg) Render(s string) string {
 	if strings.Contains(s, "{{") {
 		t, err := template.New("gocfg").Funcs(sprig.GenericFuncMap()).Parse(s)
