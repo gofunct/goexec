@@ -2,12 +2,12 @@ module github.com/gofunct/goexec
 
 require (
 	github.com/Masterminds/sprig v2.17.1+incompatible
-	github.com/cheggaaa/pb v2.0.6+incompatible
 	github.com/gofunct/gocfg v0.0.0-20190211231515-8f83d8838a3a // indirect
 	github.com/gofunct/pb v0.0.0-20190208013516-51958b5486d5 // indirect
 	github.com/hashicorp/go-getter v1.0.2
 	github.com/jessevdk/go-assets v0.0.0-20160921144138-4f4301a06e15
 	github.com/pkg/errors v0.8.1
+	github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
 	github.com/spf13/afero v1.2.1
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3

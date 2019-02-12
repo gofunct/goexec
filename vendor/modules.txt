@@ -41,8 +41,6 @@ github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
 # github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 github.com/bgentry/go-netrc/netrc
-# github.com/cheggaaa/pb v2.0.6+incompatible
-github.com/cheggaaa/pb
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/google/uuid v1.1.0
@@ -79,10 +77,6 @@ github.com/jessevdk/go-assets
 github.com/jmespath/go-jmespath
 # github.com/magiconair/properties v1.8.0
 github.com/magiconair/properties
-# github.com/mattn/go-colorable v0.0.9
-github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.4
-github.com/mattn/go-isatty
 # github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/go-testing-interface v1.0.0
@@ -93,6 +87,8 @@ github.com/mitchellh/mapstructure
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
+# github.com/robfig/cron v0.0.0-20180505203441-b41be1df6967
+github.com/robfig/cron
 # github.com/spf13/afero v1.2.1
 github.com/spf13/afero
 github.com/spf13/afero/mem
@@ -123,17 +119,5 @@ golang.org/x/sys/windows
 # golang.org/x/text v0.3.0
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# gopkg.in/VividCortex/ewma.v1 v1.1.1
-gopkg.in/VividCortex/ewma.v1
-# gopkg.in/cheggaaa/pb.v2 v2.0.6
-gopkg.in/cheggaaa/pb.v2/termutil
-# gopkg.in/fatih/color.v1 v1.7.0
-gopkg.in/fatih/color.v1
-# gopkg.in/mattn/go-colorable.v0 v0.0.9
-gopkg.in/mattn/go-colorable.v0
-# gopkg.in/mattn/go-isatty.v0 v0.0.4
-gopkg.in/mattn/go-isatty.v0
-# gopkg.in/mattn/go-runewidth.v0 v0.0.4
-gopkg.in/mattn/go-runewidth.v0
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2

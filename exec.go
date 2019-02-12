@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-getter"
 	"github.com/jessevdk/go-assets"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -55,8 +56,8 @@ type Command struct {
 	dir       string
 	reader    io.Reader
 	writer    io.Writer
-
-	flags *cobra.Command
+	cronz     *cron.Cron
+	flags     *cobra.Command
 }
 
 func NewCommand(name string, usage string, version string, reader io.Reader, writer io.Writer) *Command {
@@ -75,6 +76,7 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 		Afero: &afero.Afero{
 			Fs: afero.NewOsFs(),
 		},
+		cronz: cron.New(),
 	}
 	cmd.flags.SetOutput(writer)
 
@@ -100,8 +102,28 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 		Run: func(_ *cobra.Command, args []string) {
 			cmd.flags.DebugFlags()
 		},
+	}, &cobra.Command{
+		Use:   "cron",
+		Short: "list cron entries",
+		Run: func(_ *cobra.Command, args []string) {
+			for i, e := range cmd.cronz.Entries() {
+				cmd.Println(fmt.Sprintf("%s%s%s", i, e.Prev, e.Next))
+			}
+		},
 	})
-	cmd.flags.AddCommand(debug)
+	cro := &cobra.Command{
+		Use:   "cron",
+		Short: "start all cron jobs on their schedules",
+	}
+	cro.AddCommand(&cobra.Command{
+		Use:   "run",
+		Short: "start the cron scheduler",
+		Run: func(_ *cobra.Command, args []string) {
+			cmd.cronz.Run()
+		},
+	})
+
+	cmd.flags.AddCommand(debug, cro)
 
 	_ = cmd.v.BindPFlags(cmd.Flags())
 	if cmd.cfgFile != "" {
@@ -127,6 +149,59 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 		fmt.Println(err.Error())
 	}
 	return cmd
+}
+
+type CronSpec int
+
+const (
+	HOURLY CronSpec = iota
+	DAILY
+	WEEKLY
+	MONTHLY
+	YEARLY
+)
+
+func (s CronSpec) String() string {
+	// declare an array of strings
+	// ... operator counts how many
+	// items in the array (7)
+	specs := [...]string{
+		"HOURLY",
+		"DAILY",
+		"WEEKLY",
+		"MONTHLY",
+		"YEARLY"}
+	// → `day`: It's one of the
+	// values of Weekday constants.
+	// If the constant is Sunday,
+	// then day is 0.
+	// prevent panicking in case of
+	// `day` is out of range of Weekday
+	if s < HOURLY || s > YEARLY {
+		panic(errors.New("unknown cron spec"))
+	}
+	// return the name of a Weekday
+	// constant from the names array
+	// above.
+	str := specs[s]
+	switch str {
+	case "HOURLY":
+		str = "@hourly "
+	case "DAILY":
+		str = "@daily"
+	case "WEEKLY":
+		str = "@weekly"
+	case "MONTHLY":
+		str = "@monthly"
+	case "YEARLY":
+		str = "@yearly"
+	}
+	return str
+}
+
+func (c *Command) Cron(spec CronSpec, fn func()) {
+	cronz := cron.New()
+	c.Panic(cronz.AddFunc(spec.String(), fn), "failed to add cron")
 }
 
 func (c *Command) Execute() error {
@@ -540,7 +615,7 @@ const (
 
 var _Mode_index = [...]uint8{0, 3, 7, 10}
 
-func (c *Command) Load(mode Mode, src, dst string) {
+func (cmd *Command) Load(mode Mode, src, dst string) {
 	var moder getter.ClientMode
 	switch mode {
 	case ANY:
