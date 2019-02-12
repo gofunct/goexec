@@ -21,7 +21,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -212,22 +211,12 @@ func (c *Command) Act(name string, usg string, action ActFunc) {
 	c.Sync()
 }
 
-func (c *Command) HandlerFunc() http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request) {
-		c.MultiRead(r.Body)
-		c.SetOutput(w)
-	}
-}
-
-func (c *Command) SetOutput(w io.Writer) {
-	c.flags.SetOutput(w)
-}
 func (c *Command) Flags() *pflag.FlagSet {
 	return c.flags.PersistentFlags()
 }
 
-func (c *Command) Output() ([]byte, error) {
-	return c.exe.Output()
+func (c *Command) SetOutput(w io.Writer) {
+	c.flags.SetOutput(w)
 }
 
 func (c *Command) Run() error {
@@ -277,7 +266,6 @@ func (c *Command) GetDir() string {
 func (c *Command) SetDir(path string) {
 	c.exe.Dir = path
 }
-
 
 func (c *Command) Sync() {
 	for _, e := range os.Environ() {
@@ -559,7 +547,7 @@ func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) string {
 }
 
 func (c *Command) Println(msg string) {
-	_, err  := fmt.Fprintln(c.OutOrStdErr(), msg)
+	_, err := fmt.Fprintln(c.OutOrStdErr(), msg)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
