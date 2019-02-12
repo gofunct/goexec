@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofunct/goexec"
 	"os"
+	"context"
 )
 
 func init() {
@@ -20,9 +21,9 @@ func main() {
 		cmd.AddScript(`echo "hello, {{ .user }}" >> output/hello.txt`)
 		return cmd.Run()
 	})
-	exe.Act("hello", "just sayin hello", func(cmd *goexec.Command) error {
-		cmd.list
-		return cmd.Run()
+	exe.Act("list-images", "list docker images", func(cmd *goexec.Command) error {
+
+		return cmd.ListImages(context.Background())
 	})
 
 	if err := exe.Execute(); err != nil {
