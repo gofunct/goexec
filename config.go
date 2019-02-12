@@ -2,8 +2,11 @@ package goexec
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/Masterminds/sprig"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -34,7 +37,18 @@ func (c *Command) Sync() {
 }
 
 func (c *Command) ReadInConfig() error {
-	return c.v.ReadInConfig()
+	if viper.ConfigFileUsed() != "" {
+		name := viper.ConfigFileUsed()
+		b, _ := ioutil.ReadFile(name)
+		s := fmt.Sprintf("%s", b)
+		if strings.Contains(s, " {{") {
+			s = c.Render(s)
+			r := strings.NewReader(s)
+			return c.v.ReadConfig(r)
+		}
+	}
+	c.Println("no config file found")
+	return nil
 }
 
 func (c *Command) Set(key string, val interface{}) {
