@@ -16,7 +16,6 @@ import (
 
 type DkrExecConfigFunc func(config types.ExecConfig)
 type DkrImageBuildConfigFunc func(opts types.ImageBuildOptions)
-type DkrAuthConfigFunc func(opts types.AuthConfig)
 
 func (c *Command) ListContainers() {
 	containers, err := c.dkr.ContainerList(context.Background(), types.ContainerListOptions{})
@@ -95,7 +94,7 @@ func (c *Command) ExecAttachContainer(ctx context.Context, tty, detach bool, exe
 	return nil
 }
 
-func (c *Command) CreateExecContainer(ctx context.Context, name string, opts ...ExecConfigFunc) error {
+func (c *Command) CreateExecContainer(ctx context.Context, name string, opts ...DkrExecConfigFunc) error {
 	exconfig := types.ExecConfig{}
 	for _, o := range opts {
 		o(exconfig)
