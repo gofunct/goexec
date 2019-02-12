@@ -5,14 +5,16 @@ import (
 	"github.com/gofunct/goexec"
 	"os"
 )
+
 func init() {
 	exe.Flags().StringVar(&variable, "var", "hello dude", "just an example variable that can be set")
 }
 
 var (
 	variable string
-	exe = goexec.NewCommand("example", "just an example", "0.1", os.Stdin, os.Stdout)
+	exe      = goexec.NewCommand("example", "just an example", "0.1", os.Stdin, os.Stdout)
 )
+
 func main() {
 	exe.Act("hello", "just sayin hello", func(cmd *goexec.Command) error {
 		cmd.AddScript(`echo "hello {{ .user }}" >> ./output/example.txt`)

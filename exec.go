@@ -3,11 +3,12 @@ package goexec
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/sprig"
-	"github.com/gofunct/lg"
+	"github.com/hashicorp/go-getter"
 	"github.com/jessevdk/go-assets"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -18,10 +19,14 @@ import (
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -41,7 +46,7 @@ type ActFunc func(cmd *Command) error
 type RunFunc func(name, usg string, act ActFunc)
 
 type Command struct {
-	fs        *afero.Afero
+	*afero.Afero
 	v         *viper.Viper
 	exe       *exec.Cmd
 	Q         *input.UI
@@ -63,11 +68,11 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 	}
 	cmd := &Command{
 		flags: &cobra.Command{
-			Use: name,
-			Short: usage,
+			Use:     name,
+			Short:   usage,
 			Version: version,
 		},
-		fs: &afero.Afero{
+		Afero: &afero.Afero{
 			Fs: afero.NewOsFs(),
 		},
 	}
@@ -77,20 +82,20 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 	cmd.Flags().StringVar(&cmd.dir, "dir", ".", "directory to execute in")
 	cmd.Flags().StringVar(&cmd.envPrefix, "envprefix", "", "prefix to environmental variables")
 	cmd.v = viper.New()
-	cmd.v.SetFs(cmd.fs)
+	cmd.v.SetFs(cmd.Afero)
 	cmd.v.AutomaticEnv()
 	debug := &cobra.Command{
-		Use: "debug",
+		Use:   "debug",
 		Short: "debug flags or current configuration",
 	}
 	debug.AddCommand(&cobra.Command{
-		Use: "config",
+		Use:   "config",
 		Short: "debug current configuration",
 		Run: func(_ *cobra.Command, args []string) {
 			cmd.v.AllSettings()
 		},
 	}, &cobra.Command{
-		Use: "flags",
+		Use:   "flags",
 		Short: "debug flags",
 		Run: func(_ *cobra.Command, args []string) {
 			cmd.flags.DebugFlags()
@@ -118,18 +123,26 @@ func NewCommand(name string, usage string, version string, reader io.Reader, wri
 	cmd.exe = c
 	if err := cmd.v.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", cmd.v.ConfigFileUsed())
+	} else {
+		fmt.Println(err.Error())
 	}
 	return cmd
 }
 
+func (c *Command) Execute() error {
+	return c.flags.Execute()
+}
+
 func (c *Command) Act(name string, usg string, action ActFunc) {
 	c.flags.AddCommand(&cobra.Command{
-		Use: name,
+		Use:   name,
 		Short: usg,
 		RunE: func(cmd *cobra.Command, args []string) error {
-		  return action(c)
+			return action(c)
 		},
 	})
+	_ = c.v.BindPFlags(c.flags.PersistentFlags())
+	c.Sync()
 }
 
 func (c *Command) Flags() *pflag.FlagSet {
@@ -148,12 +161,15 @@ func (c *Command) GetReader() io.Reader {
 	return c.exe.Stdin
 }
 
-func (c *Command) GetStdOut() io.Writer {
-	return c.exe.Stdout
+func (c *Command) MultiWrite(w io.Writer) {
+	c.exe.Stdout = io.MultiWriter(c.exe.Stdout, w)
+}
+func (c *Command) MultiRead(r io.Reader) {
+	c.exe.Stdin = io.MultiReader(c.exe.Stdin, r)
 }
 
-func (c *Command) GetStdErr() io.Writer {
-	return c.exe.Stderr
+func (c *Command) GetWriter() io.Writer {
+	return c.exe.Stdout
 }
 
 func (c *Command) AddScript(script string) {
@@ -184,30 +200,20 @@ func (c *Command) SetDir(path string) {
 	c.exe.Dir = path
 }
 
-func (c *Command) Execute() error {
-	_ = c.v.BindPFlags(c.Flags())
-	c.Sync()
-	return c.flags.Execute()
-}
-
 func (c *Command) Sync() {
 	for _, e := range os.Environ() {
 		sp := strings.Split(e, "=")
 		c.v.SetDefault(strings.ToLower(sp[0]), sp[1])
 	}
-	for k, c := range c.v.AllSettings() {
-		val, ok := c.(string)
+	for k, v := range c.v.AllSettings() {
+		val, ok := v.(string)
 		if ok {
-			lg.DebugIfErr(os.Setenv(strings.ToUpper(k), val), k, "failed to bind "+val)
+			c.Println(os.Setenv(strings.ToUpper(k), val).Error())
 		}
 	}
 }
 
-func (c *Command) ReadFrom(reader io.Reader) error {
-	return c.v.ReadConfig(reader)
-}
-
-func (c *Command) ReadIn() error {
+func (c *Command) ReadInConfig() error {
 	return c.v.ReadInConfig()
 }
 
@@ -277,7 +283,7 @@ func (c *Command) PromptCSV(key string, question string) []string {
 	fmt.Print("csv | x, y, z | " + question)
 	text, _ := reader.ReadString('\n')
 	txtCsv, err := c.AsCSV(text)
-	lg.DebugIfErr(err, "prompt csv", "failed to read comma seperated values from input")
+	c.Println(err.Error() + "\nfailed to read comma seperated values from input")
 	c.v.SetDefault(key, txtCsv)
 	return txtCsv
 }
@@ -289,7 +295,7 @@ func (c *Command) PromptMap(key string, question string) map[string]string {
 	fmt.Print("map | a=b,c=d | " + question)
 	text, _ := reader.ReadString('\n')
 	txtMap, err := c.AsMap(text)
-	lg.DebugIfErr(err, "prompt map", "failed to read comma seperated values from input, seperate map values with : or = and map entries with ,")
+	c.Println(err.Error() + "\nfailed to read comma seperated values from input, seperate map values with : or = and map entries with ,")
 	c.v.SetDefault(key, txtMap)
 	return txtMap
 }
@@ -314,17 +320,17 @@ func (c *Command) ProcessAsset(t *template.Template, file *assets.File) {
 	tpl := t.New(file.Name()).Funcs(sprig.GenericFuncMap())
 	tpl, err := tpl.Parse(string(content))
 	if err != nil {
-		lg.WarnIfErr(err, file.Name(), "Could not parse template ")
+		c.Panic(err, "Could not parse template ")
 	}
 
-	f, err := c.fs.Create(file.Name())
+	f, err := c.Create(file.Name())
 	if err != nil {
-		lg.WarnIfErr(err, file.Name(), "Could not create file for writing")
+		c.Panic(err, "Could not create file for writing")
 	}
 	defer f.Close()
 	err = tpl.Execute(f, c.v.AllSettings())
 	if err != nil {
-		lg.WarnIfErr(err, file.Name(), "Could not execute template")
+		c.Panic(err, "Could not execute template")
 	}
 }
 
@@ -332,7 +338,7 @@ func (c *Command) WalkTemplates(dir string, outDir string) {
 
 	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			lg.DebugIfErr(err, path, "walkfunc copy error")
+			c.Panic(err, "error walking path")
 		}
 		if strings.Contains(path, ".tmpl") {
 			b, err := ioutil.ReadFile(path)
@@ -341,7 +347,7 @@ func (c *Command) WalkTemplates(dir string, outDir string) {
 				return err
 			}
 
-			f, err := c.fs.Create(outDir + "/" + strings.TrimSuffix(info.Name(), ".tmpl"))
+			f, err := c.Afero.Create(outDir + "/" + strings.TrimSuffix(info.Name(), ".tmpl"))
 			if err != nil {
 				return err
 			}
@@ -349,18 +355,18 @@ func (c *Command) WalkTemplates(dir string, outDir string) {
 		}
 		return nil
 	}); err != nil {
-		lg.WarnIfErr(err, dir+" to "+outDir, "failed to walk templates")
+		c.Panic(err, "failed to walk templates")
 	}
 }
 
 func (c *Command) CopyFile(srcfile, dstfile string) (*afero.File, error) {
-	srcF, err := c.fs.Open(srcfile) // nolint: gosec
+	srcF, err := c.Open(srcfile) // nolint: gosec
 	if err != nil {
 		return nil, fmt.Errorf("could not open source file: %s", err)
 	}
 	defer srcF.Close()
 
-	dstF, err := c.fs.Create(dstfile)
+	dstF, err := c.Afero.Create(dstfile)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +374,7 @@ func (c *Command) CopyFile(srcfile, dstfile string) (*afero.File, error) {
 	if _, err = io.Copy(dstF, srcF); err != nil {
 		return nil, fmt.Errorf("could not copy file: %s", err)
 	}
-	return &dstF, c.fs.Chmod(dstfile, 0755)
+	return &dstF, c.Chmod(dstfile, 0755)
 }
 
 func (c *Command) JsonSettings() []byte {
@@ -381,14 +387,14 @@ func (c *Command) JsonSettingsString() string {
 
 func (c *Command) YamlSettings() []byte {
 	bits, err := yaml.Marshal(c.v.AllSettings())
-	lg.WarnIfErr(err, c.v.ConfigFileUsed(), "failed to unmarshal config to yaml")
+	c.Panic(err, "failed to unmarshal config to yaml")
 	return bits
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
 func (c *Command) toPrettyJsonString(obj interface{}) string {
 	output, _ := json.MarshalIndent(obj, "", "  ")
-	return string(output)
+	return fmt.Sprintf("%s", output)
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
@@ -448,36 +454,155 @@ func (c *Command) AsBool(s string) bool {
 			return false
 		}
 	}
-	panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)))
+	c.Panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)), "failed to convert string to bool")
+	return false
 }
 
 func (c *Command) Render(s string) string {
 	if strings.Contains(s, "{{") {
 		t, err := template.New("").Funcs(sprig.GenericFuncMap()).Parse(s)
-		lg.FatalIfErr(err, t.Name(), "failed to render string")
+		c.Panic(err, "failed to render string")
 		buf := bytes.NewBuffer(nil)
-		lg.FatalIfErr(t.Execute(buf, c.v.AllSettings()), t.Name(), "failed to render string")
+		c.Panic(t.Execute(buf, c.v.AllSettings()), "failed to render string")
 		return buf.String()
 	}
 	return s
 }
 
-func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) {
+func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) string {
 	scanner := bufio.NewScanner(r)
 	rep := strings.NewReplacer(replacements...)
+	var text string
 	for scanner.Scan() {
-		rep.Replace(scanner.Text())
+		text = rep.Replace(scanner.Text())
+	}
+	return text
+}
+
+func (c *Command) Println(msg string) {
+	c.Println(msg)
+}
+
+func (c *Command) Exit(msg string) {
+	c.Println(msg)
+	os.Exit(1)
+}
+
+func (c *Command) Panic(err error, msg string) {
+	if err != nil {
+		c.Println(msg)
+		panic(err.Error())
 	}
 }
 
-func (c *Command) ScanAndReplaceBytes(r io.Reader, replacements ...string) {
-	scanner := bufio.NewScanner(r)
-	rep := strings.NewReplacer(replacements...)
-	for scanner.Scan() {
-		rep.Replace(fmt.Sprintf("%s", scanner.Bytes()))
+func (c *Command) ScanAndReplaceFile(f afero.File, replacements ...string) {
+	nm := f.Name()
+	d, err := ioutil.ReadAll(f)
+	if err != nil {
+		panic(err.Error())
 	}
+	if err := c.Remove(f.Name()); err != nil {
+		panic(err.Error())
+	}
+	scanner := bufio.NewScanner(strings.NewReader(fmt.Sprintf("%s", d)))
+	rep := strings.NewReplacer(replacements...)
+	var newstr string
+	for scanner.Scan() {
+		newstr = rep.Replace(scanner.Text())
+		if err := scanner.Err(); err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+	}
+	newf, err := c.Create(nm)
+	if err != nil {
+		panic(err.Error())
+	}
+	_, err = io.WriteString(newf, newstr)
+	c.Panic(err, "failed to write string to new file")
+	c.Println("successfully scanned and replaced: " + f.Name())
+
 }
 
 func enquire(key string) (string, string) {
 	return key, fmt.Sprintf("required | please set %s:", key)
+}
+
+type Mode int
+
+const _Mode_name = "ANYFILEDIR"
+
+const (
+	ANY Mode = iota
+	FILE
+	DIR
+)
+
+var _Mode_index = [...]uint8{0, 3, 7, 10}
+
+func (c *Command) Load(mode Mode, src, dst string) {
+	var moder getter.ClientMode
+	switch mode {
+	case ANY:
+		moder = getter.ClientModeAny
+	case FILE:
+		moder = getter.ClientModeFile
+	case DIR:
+		moder = getter.ClientModeDir
+	default:
+		fmt.Printf("Invalid client mode, must be 'any', 'file', or 'dir': %s", mode.String())
+		os.Exit(1)
+	}
+
+	// Get the pwd
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Error getting wd: %s", err)
+		os.Exit(1)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	// Build the client
+	client := &getter.Client{
+		Ctx:  ctx,
+		Src:  src,
+		Dst:  dst,
+		Pwd:  pwd,
+		Mode: moder,
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	errChan := make(chan error, 2)
+	go func() {
+		defer wg.Done()
+		defer cancel()
+		if err := client.Get(); err != nil {
+			errChan <- err
+		}
+	}()
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt)
+
+	select {
+	case sig := <-c:
+		signal.Reset(os.Interrupt)
+		cancel()
+		wg.Wait()
+		log.Printf("signal %v", sig)
+	case <-ctx.Done():
+		wg.Wait()
+		log.Printf("success!")
+	case err := <-errChan:
+		wg.Wait()
+		log.Fatalf("Error downloading: %s", err)
+	}
+}
+
+func (i Mode) String() string {
+	if i < 0 || i >= Mode(len(_Mode_index)-1) {
+		return "Mode(" + strconv.FormatInt(int64(i), 10) + ")"
+	}
+	return _Mode_name[_Mode_index[i]:_Mode_index[i+1]]
 }
