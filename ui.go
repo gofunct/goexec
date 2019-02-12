@@ -52,6 +52,9 @@ func enquire(key string) (string, string) {
 	return key, fmt.Sprintf("required | please set %s:", key)
 }
 
+func (c *Command) Printf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
 func (c *Command) Println(msg string) {
 	fmt.Println(msg)
 }

@@ -2,7 +2,6 @@ package goexec
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"github.com/Masterminds/sprig"
 	"github.com/jessevdk/go-assets"

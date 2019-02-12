@@ -1,5 +1,16 @@
 package goexec
 
+import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/go-getter"
+	"log"
+	"os"
+	"os/signal"
+	"strconv"
+	"sync"
+)
+
 type Mode int
 
 const _Mode_name = "ANYFILEDIR"
@@ -29,7 +40,7 @@ func (cmd *Command) Load(mode Mode, src, dst string) {
 	// Get the pwd
 	pwd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Error getting wd: %s", err)
+		cmd.Printf("Error getting wd: %s", err)
 		os.Exit(1)
 	}
 

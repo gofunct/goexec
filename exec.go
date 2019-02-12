@@ -81,7 +81,7 @@ func NewCommand(name string, usage string, version string) *Command {
 		Short: "list cron entries",
 		Run: func(_ *cobra.Command, args []string) {
 			for i, e := range cmd.cronz.Entries() {
-				cmd.Println(fmt.Sprintf("%s%s%s", i, e.Prev, e.Next))
+				cmd.Printf("%v%s%s", i, e.Prev, e.Next)
 			}
 		},
 	})
