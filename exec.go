@@ -68,7 +68,7 @@ func NewCommand(name string, usage string, version string) *Command {
 		Use:   "config",
 		Short: "debug current configuration",
 		Run: func(_ *cobra.Command, args []string) {
-			cmd.v.AllSettings()
+			cmd.v.Debug()
 		},
 	}, &cobra.Command{
 		Use:   "flags",
