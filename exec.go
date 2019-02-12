@@ -2,6 +2,7 @@ package goexec
 
 import (
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/robfig/cron"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -39,9 +40,14 @@ type Command struct {
 	dir       string
 	cronz     *cron.Cron
 	flags     *cobra.Command
+	dkr 	  *client.Client
 }
 
 func NewCommand(name string, usage string, version string) *Command {
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		panic(err)
+	}
 	cmd := &Command{
 		flags: &cobra.Command{
 			Use:     name,
@@ -52,6 +58,7 @@ func NewCommand(name string, usage string, version string) *Command {
 			Fs: afero.NewOsFs(),
 		},
 		cronz: cron.New(),
+		dkr: cli,
 	}
 
 	cmd.Flags().StringVar(&cmd.cfgFile, "config", "goexec.yaml", "path to config file")
