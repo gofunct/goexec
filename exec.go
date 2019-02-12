@@ -40,7 +40,7 @@ type Command struct {
 	dir       string
 	cronz     *cron.Cron
 	flags     *cobra.Command
-	dkr 	  *client.Client
+	dkr       *client.Client
 }
 
 func NewCommand(name string, usage string, version string) *Command {
@@ -58,7 +58,7 @@ func NewCommand(name string, usage string, version string) *Command {
 			Fs: afero.NewOsFs(),
 		},
 		cronz: cron.New(),
-		dkr: cli,
+		dkr:   cli,
 	}
 
 	cmd.Flags().StringVar(&cmd.cfgFile, "config", "goexec.yaml", "path to config file")

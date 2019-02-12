@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/gofunct/goexec/pkg"
 	"io"
 	"log"
@@ -32,13 +33,13 @@ func (c *Command) DockerVersion() string {
 	return c.dkr.ClientVersion()
 }
 
-func (c *Command) AttachContainer(ctx context.Context, container string)  error {
+func (c *Command) AttachContainer(ctx context.Context, container string) error {
 	hijak, err := c.dkr.ContainerAttach(ctx, container, types.ContainerAttachOptions{
-		Stream:     true,
-		Stdin:      true,
-		Stdout:     true,
-		Stderr:     true,
-		Logs:       true,
+		Stream: true,
+		Stdin:  true,
+		Stdout: true,
+		Stderr: true,
+		Logs:   true,
 	})
 	if err != nil {
 		return err
@@ -52,20 +53,14 @@ func (c *Command) AttachContainer(ctx context.Context, container string)  error 
 
 func (c *Command) CommitContainer(ctx context.Context, container string, author string, comment string) (string, error) {
 	id, err := c.dkr.ContainerCommit(ctx, container, types.ContainerCommitOptions{
-		Comment:   comment,
-		Author:    author,
+		Comment: comment,
+		Author:  author,
 	})
 	return id.ID, err
 }
 
 func (c *Command) CreateContainer(ctx context.Context, name string) (string, error) {
-	body, err := c.dkr.ContainerCreate(ctx, &container.Config{
-
-	}, &container.HostConfig{
-
-	}, &network.NetworkingConfig{
-
-	}, name,
+	body, err := c.dkr.ContainerCreate(ctx, &container.Config{}, &container.HostConfig{}, &network.NetworkingConfig{}, name,
 	)
 	if len(body.Warnings) > 0 {
 		for _, warn := range body.Warnings {
@@ -87,8 +82,8 @@ func (c *Command) DiffContainer(ctx context.Context, name string) {
 
 func (c *Command) ExecAttachContainer(ctx context.Context, tty, detach bool, execId, name string) error {
 	hijak, err := c.dkr.ContainerExecAttach(ctx, execId, types.ExecConfig{
-	Detach:	detach,
-	Tty: tty,
+		Detach: detach,
+		Tty:    tty,
 	})
 	if err != nil {
 		return err
@@ -127,21 +122,20 @@ func (c *Command) ExportContainer(ctx context.Context, id string) (io.ReadCloser
 }
 
 func (c *Command) ShutdownContainer(ctx context.Context, id string) error {
-	to := 60 *time.Second
+	to := 60 * time.Second
 	return c.dkr.ContainerStop(ctx, id, &to)
 }
 
-
 func (c *Command) RemoveContainer(ctx context.Context, id string, vol, links, force bool) error {
 	return c.dkr.ContainerRemove(ctx, id, types.ContainerRemoveOptions{
-	RemoveLinks: links,
-	RemoveVolumes: vol,
-	Force: force,
+		RemoveLinks:   links,
+		RemoveVolumes: vol,
+		Force:         force,
 	})
 }
 
 func (c *Command) RestartContainer(ctx context.Context, id string) error {
-	to := 60 *time.Second
+	to := 60 * time.Second
 	return c.dkr.ContainerRestart(ctx, id, &to)
 }
 
@@ -172,7 +166,7 @@ func (c *Command) DiscUsage(ctx context.Context) error {
 	return nil
 }
 
-func (c *Command) BuildImage(ctx context.Context, reader io.Reader, opts ...DkrImageBuildConfigFunc) (io.ReadCloser, error) {
+func (c *Command) ImageBuild(ctx context.Context, reader io.Reader, opts ...DkrImageBuildConfigFunc) (io.ReadCloser, error) {
 	cfg := types.ImageBuildOptions{}
 	for _, o := range opts {
 		o(cfg)
@@ -185,5 +179,70 @@ func (c *Command) BuildImage(ctx context.Context, reader io.Reader, opts ...DkrI
 	return resp.Body, nil
 }
 
+func (c *Command) ImageImport(ctx context.Context, ref string, name string, tag string) (io.ReadCloser, error) {
+	return c.dkr.ImageImport(ctx, types.ImageImportSource{
+		SourceName: name,
+	}, ref, types.ImageImportOptions{
+		Tag: tag,
+	})
+}
 
+func (c *Command) ListImages(ctx context.Context, ref string, name string) error {
+	sum, err := c.dkr.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("Image List Summary: \n%s", sum))
+	return nil
+}
 
+func (c *Command) PushImage(ctx context.Context, ref string, auth string) (io.ReadCloser, error) {
+	return c.dkr.ImagePush(ctx, ref, types.ImagePushOptions{
+		All:          true,
+		RegistryAuth: auth,
+	})
+}
+
+func (c *Command) TagImage(ctx context.Context, id, ref string) error {
+	return c.dkr.ImageTag(ctx, id, ref)
+}
+
+func (c *Command) SageImages(ctx context.Context, ids ...string) (io.ReadCloser, error) {
+	return c.dkr.ImageSave(ctx, ids)
+}
+
+func (c *Command) HistoryImage(ctx context.Context, id string) error {
+	hist, err := c.dkr.ImageHistory(ctx, id)
+	if err != nil {
+		return err
+	}
+	for _, h := range hist {
+		fmt.Println(fmt.Sprintf("History: \n%s", h))
+	}
+	return nil
+}
+
+func (c *Command) DockerInfo(ctx context.Context, id string) (string, error) {
+	i, err := c.dkr.Info(ctx)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Info: \n%s", i), nil
+}
+
+func (c *Command) CreateVolume(ctx context.Context, name, driver string, labels, driveropts map[string]string) (string, error) {
+	info, err := c.dkr.VolumeCreate(ctx, volume.VolumesCreateBody{
+		Driver:     driver,
+		DriverOpts: driveropts,
+		Labels:     labels,
+		Name:       name,
+	})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s", info), nil
+}
+
+func (c *Command) RemoveVolume(ctx context.Context, id string) error {
+	return c.dkr.VolumeRemove(ctx, id, true)
+}
