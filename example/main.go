@@ -11,7 +11,7 @@ func init() {
 
 var (
 	variable string
-	exe = goexec.NewCommand("example", "just an example", os.Stdin, os.Stdout)
+	exe = goexec.NewCommand("example", "just an example", "0.1", os.Stdin, os.Stdout)
 )
 func main() {
 	exe.Act("hello", "just sayin hello", func(cmd *goexec.Command) error {

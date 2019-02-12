@@ -54,8 +54,7 @@ type Command struct {
 	flags *cobra.Command
 }
 
-func NewCommand(name string, usage string, reader io.Reader, writer io.Writer) *Command {
-
+func NewCommand(name string, usage string, version string, reader io.Reader, writer io.Writer) *Command {
 	if reader == nil {
 		reader = os.Stdin
 	}
@@ -66,18 +65,39 @@ func NewCommand(name string, usage string, reader io.Reader, writer io.Writer) *
 		flags: &cobra.Command{
 			Use: name,
 			Short: usage,
+			Version: version,
 		},
 		fs: &afero.Afero{
 			Fs: afero.NewOsFs(),
 		},
 	}
 	cmd.flags.SetOutput(writer)
+
 	cmd.Flags().StringVar(&cmd.cfgFile, "config", "", "path to config file")
 	cmd.Flags().StringVar(&cmd.dir, "dir", ".", "directory to execute in")
 	cmd.Flags().StringVar(&cmd.envPrefix, "envprefix", "", "prefix to environmental variables")
 	cmd.v = viper.New()
 	cmd.v.SetFs(cmd.fs)
 	cmd.v.AutomaticEnv()
+	debug := &cobra.Command{
+		Use: "debug",
+		Short: "debug flags or current configuration",
+	}
+	debug.AddCommand(&cobra.Command{
+		Use: "config",
+		Short: "debug current configuration",
+		Run: func(_ *cobra.Command, args []string) {
+			cmd.v.AllSettings()
+		},
+	}, &cobra.Command{
+		Use: "flags",
+		Short: "debug flags",
+		Run: func(_ *cobra.Command, args []string) {
+			cmd.flags.DebugFlags()
+		},
+	})
+	cmd.flags.AddCommand(debug)
+
 	_ = cmd.v.BindPFlags(cmd.Flags())
 	if cmd.cfgFile != "" {
 		cmd.v.SetConfigFile(cmd.cfgFile)
@@ -112,9 +132,6 @@ func (c *Command) Act(name string, usg string, action ActFunc) {
 	})
 }
 
-func (c *Command) AddCommand(cmds ...*cobra.Command) {
-	c.flags.AddCommand(cmds...)
-}
 func (c *Command) Flags() *pflag.FlagSet {
 	return c.flags.PersistentFlags()
 }
@@ -169,6 +186,7 @@ func (c *Command) SetDir(path string) {
 
 func (c *Command) Execute() error {
 	_ = c.v.BindPFlags(c.Flags())
+	c.Sync()
 	return c.flags.Execute()
 }
 
@@ -226,10 +244,6 @@ func (c *Command) GetStringMapString(key string) map[string]string {
 		return c.PromptMap(enquire(key))
 	}
 	return c.v.GetStringMapString(key)
-}
-
-func (c *Command) BindFlagVal(key string, val viper.FlagValue) error {
-	return c.v.BindFlagValue(key, val)
 }
 
 func (c *Command) BindFPflags(set *pflag.FlagSet) error {
@@ -439,7 +453,7 @@ func (c *Command) AsBool(s string) bool {
 
 func (c *Command) Render(s string) string {
 	if strings.Contains(s, "{{") {
-		t, err := template.New("gocfg").Funcs(sprig.GenericFuncMap()).Parse(s)
+		t, err := template.New("").Funcs(sprig.GenericFuncMap()).Parse(s)
 		lg.FatalIfErr(err, t.Name(), "failed to render string")
 		buf := bytes.NewBuffer(nil)
 		lg.FatalIfErr(t.Execute(buf, c.v.AllSettings()), t.Name(), "failed to render string")
