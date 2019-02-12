@@ -245,3 +245,12 @@ func (c *Command) CreateVolume(ctx context.Context, name, driver string, labels,
 func (c *Command) RemoveVolume(ctx context.Context, id string) error {
 	return c.dkr.VolumeRemove(ctx, id, true)
 }
+
+func (c *Command) DebugContainer(ctx context.Context, id string, args ...string) error {
+	bod, err := c.dkr.ContainerTop(ctx, id, args)
+	if err != nil {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("%s", bod))
+	return nil
+}

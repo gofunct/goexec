@@ -20,6 +20,10 @@ func main() {
 		cmd.AddScript(`echo "hello, {{ .user }}" >> output/hello.txt`)
 		return cmd.Run()
 	})
+	exe.Act("hello", "just sayin hello", func(cmd *goexec.Command) error {
+		cmd.list
+		return cmd.Run()
+	})
 
 	if err := exe.Execute(); err != nil {
 		fmt.Println(err.Error())
