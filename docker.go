@@ -24,7 +24,7 @@ func (c *Command) ListContainers() {
 	}
 
 	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+		fmt.Printf("Container: %v", c.toPrettyJsonString(container))
 	}
 }
 
@@ -59,8 +59,7 @@ func (c *Command) CommitContainer(ctx context.Context, container string, author 
 }
 
 func (c *Command) CreateContainer(ctx context.Context, name string) (string, error) {
-	body, err := c.dkr.ContainerCreate(ctx, &container.Config{}, &container.HostConfig{}, &network.NetworkingConfig{}, name,
-	)
+	body, err := c.dkr.ContainerCreate(ctx, &container.Config{}, &container.HostConfig{}, &network.NetworkingConfig{}, name)
 	if len(body.Warnings) > 0 {
 		for _, warn := range body.Warnings {
 			log.Println(warn)
@@ -72,7 +71,7 @@ func (c *Command) CreateContainer(ctx context.Context, name string) (string, err
 func (c *Command) DiffContainer(ctx context.Context, name string) {
 	chgs, err := c.dkr.ContainerDiff(ctx, name)
 	for _, chg := range chgs {
-		c.Printf("Kind: %v Path: %s", chg.Kind, chg.Path)
+		c.Printf("Change: %v", c.toPrettyJsonString(string(chg.Kind)+chg.Path))
 	}
 	if err != nil {
 		panic(err)
@@ -103,7 +102,7 @@ func (c *Command) CreateExecContainer(ctx context.Context, name string, opts ...
 	if err != nil {
 		return err
 	}
-	log.Printf("ID: %s", id)
+	log.Printf("ID: %v", c.toPrettyJsonString(id))
 	return nil
 }
 
@@ -112,7 +111,7 @@ func (c *Command) ExecInspect(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("Inspection Results: \n%s", res))
+	fmt.Println(fmt.Sprintf("Inspection Results: \n%v", c.toPrettyJsonString(res)))
 	return nil
 }
 
@@ -161,7 +160,7 @@ func (c *Command) DiscUsage(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("%s", usg))
+	fmt.Println(fmt.Sprintf("Disk Usage: \n%v", c.toPrettyJsonString(usg)))
 	return nil
 }
 
@@ -186,12 +185,12 @@ func (c *Command) ImageImport(ctx context.Context, ref string, name string, tag 
 	})
 }
 
-func (c *Command) ListImages(ctx context.Context, ref string, name string) error {
+func (c *Command) ListImages(ctx context.Context) error {
 	sum, err := c.dkr.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("Image List Summary: \n%s", sum))
+	c.Printf("Image List Summary: \n%v", c.toPrettyJsonString(sum))
 	return nil
 }
 
@@ -216,7 +215,7 @@ func (c *Command) HistoryImage(ctx context.Context, id string) error {
 		return err
 	}
 	for _, h := range hist {
-		fmt.Println(fmt.Sprintf("History: \n%s", h))
+		fmt.Println(fmt.Sprintf("History: \n%v", c.toPrettyJsonString(h)))
 	}
 	return nil
 }
@@ -226,10 +225,10 @@ func (c *Command) DockerInfo(ctx context.Context, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Info: \n%s", i), nil
+	return fmt.Sprintf("Info: \n%v", c.toPrettyJsonString(i)), nil
 }
 
-func (c *Command) CreateVolume(ctx context.Context, name, driver string, labels, driveropts map[string]string) (string, error) {
+func (c *Command) CreateVolume(ctx context.Context, name, driver string, labels, driveropts map[string]string) error {
 	info, err := c.dkr.VolumeCreate(ctx, volume.VolumesCreateBody{
 		Driver:     driver,
 		DriverOpts: driveropts,
@@ -237,9 +236,11 @@ func (c *Command) CreateVolume(ctx context.Context, name, driver string, labels,
 		Name:       name,
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
-	return fmt.Sprintf("%s", info), nil
+
+	fmt.Printf("Volume Created: %v", c.toPrettyJsonString(info))
+	return nil
 }
 
 func (c *Command) RemoveVolume(ctx context.Context, id string) error {
@@ -251,6 +252,6 @@ func (c *Command) DebugContainer(ctx context.Context, id string, args ...string)
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("%s", bod))
+	fmt.Println(fmt.Sprintf("Debug: \n%v", c.toPrettyJsonString(bod)))
 	return nil
 }

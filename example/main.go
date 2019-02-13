@@ -25,6 +25,10 @@ func main() {
 
 		return cmd.ListImages(context.Background())
 	})
+	exe.Act("gobin", "Download go mod binary", func(cmd *goexec.Command) error {
+
+		return cmd.GoBin([]string{"github.com/gofunct/goexec/example"})
+	})
 
 	if err := exe.Execute(); err != nil {
 		fmt.Println(err.Error())
