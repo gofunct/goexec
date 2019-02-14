@@ -1,4 +1,4 @@
-package pkg
+package fs
 
 import (
 	"bytes"
@@ -91,7 +91,7 @@ func NewStdWriter(w io.Writer, t StdType) io.Writer {
 // In other words: if `err` is non nil, it indicates a real underlying error.
 //
 // `written` will hold the total number of bytes written to `dstout` and `dsterr`.
-func StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
+func (f *Fs) StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
 	var (
 		buf= make([]byte, startingBufLen)
 		bufLen= len(buf)

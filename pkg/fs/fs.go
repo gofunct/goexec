@@ -1,4 +1,4 @@
-package goexec
+package fs
 
 import (
 	"bufio"
@@ -6,6 +6,7 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/jessevdk/go-assets"
 	"github.com/spf13/afero"
+	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,8 +15,32 @@ import (
 	"text/template"
 )
 
+type Fs struct {
+	*afero.Afero
+	*viper.Viper
+}
+
+func NewFs() *Fs {
+	fs := &afero.Afero{
+		Fs: afero.NewOsFs(),
+	}
+	v := viper.GetViper()
+	if v == nil {
+		v = viper.New()
+	}
+	v.AutomaticEnv()
+	v.SetFs(fs)
+	
+	f :=  &Fs{
+		Afero:      fs,
+		Viper:      v,
+	}
+	f.Sync()
+	return f
+}
+
 // Template reads a go template and writes it to dist given data.
-func (c *Command) ProcessAsset(t *template.Template, file *assets.File) {
+func (f *Fs) ProcessAsset(t *template.Template, file *assets.File) {
 	if file.Name() == "/" {
 		return
 	}
@@ -24,25 +49,25 @@ func (c *Command) ProcessAsset(t *template.Template, file *assets.File) {
 	tpl := t.New(file.Name()).Funcs(sprig.GenericFuncMap())
 	tpl, err := tpl.Parse(string(content))
 	if err != nil {
-		c.Panic(err, "Could not parse template ")
+		f.Panic(err, "Could not parse template ")
 	}
 
-	f, err := c.Create(file.Name())
+	fl, err := f.Create(file.Name())
 	if err != nil {
-		c.Panic(err, "Could not create file for writing")
+		f.Panic(err, "Could not create file for writing")
 	}
-	defer f.Close()
-	err = tpl.Execute(f, c.v.AllSettings())
+	defer fl.Close()
+	err = tpl.Execute(fl, f.AllSettings())
 	if err != nil {
-		c.Panic(err, "Could not execute template")
+		f.Panic(err, "Could not execute template")
 	}
 }
 
-func (c *Command) WalkTemplates(dir string, outDir string) {
+func (f *Fs)  WalkTemplates(dir string, outDir string) {
 
 	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			c.Panic(err, "error walking path")
+			f.Panic(err, "error walking path")
 		}
 		if strings.Contains(path, ".tmpl") {
 			b, err := ioutil.ReadFile(path)
@@ -51,26 +76,26 @@ func (c *Command) WalkTemplates(dir string, outDir string) {
 				return err
 			}
 
-			f, err := c.Afero.Create(outDir + "/" + strings.TrimSuffix(info.Name(), ".tmpl"))
+			f, err := f.Afero.Create(outDir + "/" + strings.TrimSuffix(info.Name(), ".tmpl"))
 			if err != nil {
 				return err
 			}
-			return newt.Execute(f, c.v.AllSettings())
+			return newt.Execute(f, f.v.AllSettings())
 		}
 		return nil
 	}); err != nil {
-		c.Panic(err, "failed to walk templates")
+		f.Panic(err, "failed to walk templates")
 	}
 }
 
-func (c *Command) CopyFile(srcfile, dstfile string) (*afero.File, error) {
-	srcF, err := c.Open(srcfile) // nolint: gosec
+func (f *Fs)  CopyFile(srcfile, dstfile string) (*afero.File, error) {
+	srcF, err := f.Open(srcfile) // nolint: gosec
 	if err != nil {
 		return nil, fmt.Errorf("could not open source file: %s", err)
 	}
 	defer srcF.Close()
 
-	dstF, err := c.Afero.Create(dstfile)
+	dstF, err := f.Afero.Create(dstfile)
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +103,10 @@ func (c *Command) CopyFile(srcfile, dstfile string) (*afero.File, error) {
 	if _, err = io.Copy(dstF, srcF); err != nil {
 		return nil, fmt.Errorf("could not copy file: %s", err)
 	}
-	return &dstF, c.Chmod(dstfile, 0755)
+	return &dstF, f.Chmod(dstfile, 0755)
 }
 
-func (c *Command) ScanAndReplaceFile(f afero.File, replacements ...string) {
+func (c *Fs)  ScanAndReplaceFile(f afero.File, replacements ...string) {
 	nm := f.Name()
 	d, err := ioutil.ReadAll(f)
 	if err != nil {
@@ -110,7 +135,7 @@ func (c *Command) ScanAndReplaceFile(f afero.File, replacements ...string) {
 
 }
 
-func (c *Command) ScanAndReplace(r io.Reader, replacements ...string) string {
+func  (f *Fs)  ScanAndReplace(r io.Reader, replacements ...string) string {
 	scanner := bufio.NewScanner(r)
 	rep := strings.NewReplacer(replacements...)
 	var text string

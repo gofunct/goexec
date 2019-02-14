@@ -2,7 +2,6 @@ package goexec
 
 import (
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/robfig/cron"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -39,17 +38,15 @@ type Command struct {
 	envPrefix string
 	dir       string
 	cronz     *cron.Cron
-	flags     *cobra.Command
-	dkr       *client.Client
+	rootcmd     *cobra.Command
+	debugcmd 	  *cobra.Command
+	scriptcmd  *cobra.Command
+	croncmd *cobra.Command
 }
 
 func NewCommand(name string, usage string, version string) *Command {
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		panic(err)
-	}
 	cmd := &Command{
-		flags: &cobra.Command{
+		rootcmd: &cobra.Command{
 			Use:     name,
 			Short:   usage,
 			Version: version,
@@ -58,8 +55,21 @@ func NewCommand(name string, usage string, version string) *Command {
 			Fs: afero.NewOsFs(),
 		},
 		cronz: cron.New(),
-		dkr:   cli,
+		croncmd: &cobra.Command{
+			Use:   "cron",
+			Short: "start all cron jobs on their schedules",
+		},
+		debugcmd: &cobra.Command{
+			Use:   "debug",
+			Short: "debug flags, current configuration, and more",
+		},
+		scriptcmd: &cobra.Command{
+			Use:   "script",
+			Short: "run bash scripts",
+		},
 	}
+
+	cmd.rootcmd.AddCommand(cmd.debugcmd, cmd.croncmd, cmd.scriptcmd)
 
 	cmd.Flags().StringVar(&cmd.cfgFile, "config", "goexec.yaml", "path to config file")
 	cmd.Flags().StringVar(&cmd.dir, "dir", ".", "directory to execute in")
@@ -81,7 +91,7 @@ func NewCommand(name string, usage string, version string) *Command {
 		Use:   "flags",
 		Short: "debug flags",
 		Run: func(_ *cobra.Command, args []string) {
-			cmd.flags.DebugFlags()
+			cmd.rootcmd.DebugFlags()
 		},
 	}, &cobra.Command{
 		Use:   "cron",
@@ -104,9 +114,10 @@ func NewCommand(name string, usage string, version string) *Command {
 		},
 	})
 
-	cmd.flags.AddCommand(debug, cro)
+	cmd.rootcmd.AddCommand(debug, cro, script)
 
 	_ = cmd.v.BindPFlags(cmd.Flags())
+
 	if cmd.cfgFile != "" {
 		cmd.v.SetConfigFile(cmd.cfgFile)
 	}

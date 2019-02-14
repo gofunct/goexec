@@ -1,41 +1,42 @@
-package goexec
+package util
 
 import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 	"strings"
 )
 
-func (c *Command) JsonSettings() []byte {
-	return (c.toPrettyJson(c.v.AllSettings()))
+func  JsonSettings() []byte {
+	return (toPrettyJson(viper.AllSettings()))
 }
 
-func (c *Command) JsonSettingsString() string {
-	return (c.toPrettyJsonString(c.v.AllSettings()))
+func  JsonSettingsString() string {
+	return (toPrettyJsonString(viper.AllSettings()))
 }
 
-func (c *Command) YamlSettings() []byte {
-	bits, err := yaml.Marshal(c.v.AllSettings())
+func  YamlSettings() []byte {
+	bits, err := yaml.Marshal(viper.AllSettings())
 	c.Panic(err, "failed to unmarshal config to yaml")
 	return bits
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func (c *Command) toPrettyJsonString(obj interface{}) string {
+func  toPrettyJsonString(obj interface{}) string {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return fmt.Sprintf("%s", output)
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func (c *Command) toPrettyJson(obj interface{}) []byte {
+func  toPrettyJson(obj interface{}) []byte {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return output
 }
 
-func (c *Command) AsCSV(val string) ([]string, error) {
+func  AsCSV(val string) ([]string, error) {
 	if val == "" {
 		return []string{}, nil
 	}
@@ -44,7 +45,7 @@ func (c *Command) AsCSV(val string) ([]string, error) {
 	return csvReader.Read()
 }
 
-func (c *Command) AsMap(val string) (map[string]string, error) {
+func AsMap(val string) (map[string]string, error) {
 	m := make(map[string]string)
 	if val == "" {
 		return m, nil
@@ -75,7 +76,7 @@ func (c *Command) AsMap(val string) (map[string]string, error) {
 var validBoolT = []string{"Y", "y", "t", "T"}
 var validBoolF = []string{"N", "n", "f", "F"}
 
-func (c *Command) AsBool(s string) bool {
+func  AsBool(s string) bool {
 	for _, v := range validBoolT {
 		if s == v {
 			return true

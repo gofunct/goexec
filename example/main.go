@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/gofunct/goexec"
 	"os"
-	"context"
 )
 
 func init() {
