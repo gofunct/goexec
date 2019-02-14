@@ -27,7 +27,7 @@ func NewCommander(name, usg, version string) *Commander {
 
 		script: commands.ScriptCmd,
 	}
-	cmder.root.AddCommand(commands.DebugCmd, commands.LoadCmd)
+	cmder.root.AddCommand(cmder.script, commands.DebugCmd, commands.LoadCmd)
 	return cmder
 }
 
@@ -50,4 +50,12 @@ func (c *Commander) AddScript(name, usg string, dir, script string) {
 			}
 		},
 	})
+}
+
+func (c *Commander) AddDescription(s string) {
+	c.root.Long = s
+}
+
+func (c *Commander) Execute() error {
+	return c.root.Execute()
 }

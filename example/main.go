@@ -1,37 +1,13 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"github.com/gofunct/goexec"
-	"os"
-)
-
-func init() {
-	exe.Flags().IntVar(&port, "port", 8080, "port to listen on")
-}
-
-var (
-	port int
-	exe  = goexec.NewCommand("example", "just an example", "0.1")
 )
 
 func main() {
-	exe.Act("hello", "just sayin hello", func(cmd *goexec.Command) error {
-		cmd.AddScript(`echo "hello, {{ .user }}" >> output/hello.txt`)
-		return cmd.Run()
-	})
-	exe.Act("list-images", "list docker images", func(cmd *goexec.Command) error {
-
-		return cmd.ListImages(context.Background())
-	})
-	exe.Act("gobin", "Download go mod binary", func(cmd *goexec.Command) error {
-
-		return cmd.GoBin([]string{"github.com/gofunct/goexec/example"})
-	})
-
+	exe := goexec.NewGoExec("example", "just an example yo", "0.1")
+	exe.AddScript("fmt", "go format", ".", `go fmt ./...`)
 	if err := exe.Execute(); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		panic(err)
 	}
 }
