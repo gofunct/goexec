@@ -42,7 +42,7 @@ func (c *Commander) AddScript(name, usg string, dir, script string) {
 	c.script.AddCommand(&cobra.Command{
 		Use:   name,
 		Short: usg,
-		Long:  script,
+		Long:  "Script: "+script,
 		Run: func(_ *cobra.Command, args []string) {
 			if err := cmd.Run(); err != nil {
 				util.PrintErr(err, "failed to run script")

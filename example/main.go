@@ -4,10 +4,19 @@ import (
 	"github.com/gofunct/goexec"
 )
 
-func main() {
-	exe := goexec.NewGoExec("example", "just an example yo", "0.1")
+func init() {
+	exe = goexec.NewGoExec("example", "just an example yo", "0.1")
 	exe.AddScript("fmt", "go format", ".", `go fmt ./...`)
-	if err := exe.Execute(); err != nil {
-		panic(err)
-	}
+}
+
+var (
+	exe *goexec.GoExec
+)
+
+func main() {
+	defer func() {
+		if err := exe.Execute(); err != nil {
+			panic(err)
+		}
+	}()
 }
