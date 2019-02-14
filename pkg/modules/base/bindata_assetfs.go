@@ -1,13 +1,13 @@
 package base
 
 import (
-	"github.com/elazarl/go-bindata-assetfs"
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/elazarl/go-bindata-assetfs"
 	"io"
-	"strings"
 	"os"
+	"strings"
 )
 
 func bindata_read(data []byte, name string) ([]byte, error) {
@@ -60,6 +60,7 @@ func AssetNames() []string {
 var _bindata = map[string]func() ([]byte, error){
 	"scripts/main.go": scripts_main_go,
 }
+
 // AssetDir returns the file names below a certain
 // directory embedded in the file by go-bindata.
 // For example if you run go-bindata on data/... and data contains the
@@ -96,13 +97,13 @@ func AssetDir(name string) ([]string, error) {
 }
 
 type _bintree_t struct {
-	Func func() ([]byte, error)
+	Func     func() ([]byte, error)
 	Children map[string]*_bintree_t
 }
+
 var _bintree = &_bintree_t{nil, map[string]*_bintree_t{
 	"scripts": &_bintree_t{nil, map[string]*_bintree_t{
-		"main.go": &_bintree_t{scripts_main_go, map[string]*_bintree_t{
-		}},
+		"main.go": &_bintree_t{scripts_main_go, map[string]*_bintree_t{}},
 	}},
 }}
 
