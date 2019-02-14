@@ -5,7 +5,8 @@ import (
 )
 
 func init() {
-	exe = goexec.NewGoExec("example", "just an example yo", "0.1")
+	exe = goexec.NewGoExec("example", "just an example yo")
+	exe.AddVersion("0.1")
 	exe.AddScript("fmt", "go format", ".", `go fmt ./...`)
 }
 

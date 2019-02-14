@@ -18,8 +18,8 @@ type Commander struct {
 func NewCommander(name, usg string) *Commander {
 	cmder := &Commander{
 		root: &cobra.Command{
-			Use:   util.BlueString("%s", name),
-			Short: util.BlueString("%s", usg),
+			Use:   name,
+			Short: usg,
 		},
 		script: commands.ScriptCmd,
 	}
@@ -28,6 +28,15 @@ func NewCommander(name, usg string) *Commander {
 	commands.LoadCmd.SetOutput(cmder.root.OutOrStderr())
 	commands.DebugCmd.SetOutput(cmder.root.OutOrStderr())
 	cmder.root.AddCommand(cmder.script, commands.DebugCmd, commands.LoadCmd)
+	util.V.Set("name", cmder.root.Use)
+	util.V.Set("usage", cmder.root.Short)
+
+	for _, c := range cmder.root.Commands() {
+		util.V.Set(c.Use+".name", c.Use)
+		util.V.Set(c.Use+".usage", c.Short)
+		_ = util.V.BindPFlags(c.Flags())
+		_ = util.V.BindPFlags(c.PersistentFlags())
+	}
 	return cmder
 }
 
@@ -40,17 +49,19 @@ func (c *Commander) AddScript(name, usg string, dir, script string) {
 	cmd.SetStdout(c.script.OutOrStdout())
 	cmd.SetStderr(c.script.OutOrStderr())
 	c.script.AddCommand(&cobra.Command{
-		Use:   util.BlueString("%s", name),
-		Short: util.BlueString("%s", usg),
-		Long:  util.BlueString("%s", "Script: "+script),
+		Use:   name,
+		Short: usg,
+		Long:  "Script: " + script,
 		Run: func(_ *cobra.Command, args []string) {
 			util.Panic(cmd.Run(), "failed to run script: %v\n", script)
 		},
 	})
+
 }
 
 func (c *Commander) AddDescription(s string) {
 	c.root.Long = s
+	util.V.Set("description", c.root.Long)
 }
 
 func (c *Commander) AddVersion(s string) {
@@ -59,8 +70,10 @@ func (c *Commander) AddVersion(s string) {
 		util.PrintErr(err, "failed to create semantic version from: %v\n", s)
 	}
 	c.root.Version = fmt.Sprintf("%s", v)
+	util.V.Set("version", c.root.Version)
 }
 
 func (c *Commander) Execute() error {
+
 	return c.root.Execute()
 }

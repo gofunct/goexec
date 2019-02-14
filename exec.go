@@ -18,8 +18,8 @@ func OnInitialize(f ...func()) {
 
 var initializers []func()
 
-func NewGoExec(name, usg, version string) *GoExec {
+func NewGoExec(name, usg string) *GoExec {
 	return &GoExec{
-		Commander: commander.NewCommander(name, usg, version),
+		Commander: commander.NewCommander(name, usg),
 	}
 }

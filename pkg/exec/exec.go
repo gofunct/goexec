@@ -19,7 +19,7 @@ package exec
 import (
 	"context"
 	"encoding/json"
-	"github.com/spf13/viper"
+	"github.com/gofunct/goexec/pkg/util"
 	"io"
 	osexec "os/exec"
 	"strings"
@@ -138,7 +138,7 @@ func (cmd *cmdWrapper) SetStderr(out io.Writer) {
 func (cmd *cmdWrapper) SetEnv(env []string) {
 	for _, v := range env {
 		e := strings.Split(v, "=")
-		viper.SetDefault(strings.ToLower(e[0]), e[1])
+		util.V.SetDefault(strings.ToLower(e[0]), e[1])
 	}
 	cmd.Env = env
 }
