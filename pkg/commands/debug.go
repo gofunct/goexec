@@ -16,27 +16,32 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // debugCmd represents the debug command
-var debugCmd = &cobra.Command{
+var DebugCmd = &cobra.Command{
 	Use:   "debug",
 	Short: "debug flags or current configuration",
 }
 
+var cfgDebug = &cobra.Command{
+	Use:   "config",
+	Short: "debug configuration settings",
+	Run: func(cmd *cobra.Command, args []string) {
+		viper.Debug()
+	},
+}
+
+var flagDebug = &cobra.Command{
+	Use:   "flags",
+	Short: "debug current flag settings",
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Root().DebugFlags()
+	},
+}
+
 func init() {
-	debugCmd.AddCommand(&cobra.Command{
-		Use:   "config",
-		Short: "debug current configuration",
-		Run: func(_ *cobra.Command, args []string) {
-			cmd.v.Debug()
-		},
-	}, &cobra.Command{
-		Use:   "flags",
-		Short: "debug flags",
-		Run: func(_ *cobra.Command, args []string) {
-			cmd.rootcmd.DebugFlags()
-		},
-	rootCmd.AddCommand(debugCmd)
+	DebugCmd.AddCommand(cfgDebug, flagDebug)
 
 }

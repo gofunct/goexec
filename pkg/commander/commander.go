@@ -1,80 +1,53 @@
 package commander
 
 import (
+	"github.com/gofunct/goexec/pkg/commands"
+	"github.com/gofunct/goexec/pkg/exec"
 	"github.com/gofunct/goexec/pkg/fs"
-	"github.com/pkg/errors"
-	"github.com/robfig/cron"
+	"github.com/gofunct/goexec/pkg/util"
 	"github.com/spf13/cobra"
 	"os"
-	"os/exec"
 )
 
-type CmdFunc func(c *Commander)
-
 type Commander struct {
-	root *cobra.Command
-	debug *cobra.Command
-	cron *cobra.Command
+	root   *cobra.Command
 	script *cobra.Command
-	cronz *cron.Cron
 	*fs.Fs
 }
 
 func NewCommander(name, usg, version string) *Commander {
 	f := fs.NewFs()
-	cr := cron.New()
-
-	cmder :=  &Commander{
+	cmder := &Commander{
 		root: &cobra.Command{
-			Use: name,
-			Short: usg,
+			Use:     name,
+			Short:   usg,
 			Version: version,
 		},
 		Fs: f,
-		debug: DebugCmd,
-		script: ScriptCmd,
-		cronz: cr,
-		cron: CronCmd,
+
+		script: commands.ScriptCmd,
 	}
-	var dir string
-	cmder.script.Flags().StringVar(&dir, "dir", os.Getenv("PWD"), "directory to execute script in")
+	cmder.root.AddCommand(commands.DebugCmd, commands.LoadCmd)
+	return cmder
 }
 
-func (c *Commander) AddDebugger(name, usg string, cmdFunc CmdFunc) {
-	c.debug.AddCommand(&cobra.Command{
-		Use: name,
+func (c *Commander) AddScript(name, usg string, dir, script string) {
+	script = c.Render(script)
+	exe := exec.New()
+	cmd := exe.Command(script)
+	cmd.SetEnv(os.Environ())
+	cmd.SetDir(dir)
+	cmd.SetStdout(c.script.OutOrStdout())
+	cmd.SetStderr(c.script.OutOrStderr())
+	c.script.AddCommand(&cobra.Command{
+		Use:   name,
 		Short: usg,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmdFunc(c)
-		},
-	})
-}
-
-func (c *Commander) AddScript(name, usg string, scrpt string) {
-	exe := exec.Command("/bin/bash", "-c", scrpt)
-	exe.Env = os.Environ()
-	exe.Stderr = c.script.OutOrStderr()
-	exe.Stdout = c.script.OutOrStdout()
-	newscrpt := &cobra.Command{
-		Use: name,
-		Short: usg,
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := exe.Run(); err != nil {
-				panic(errors.Wrap(err, "failed to run script"))
+		Long:  script,
+		Run: func(_ *cobra.Command, args []string) {
+			if err := cmd.Run(); err != nil {
+				util.PrintErr(err, "failed to run script")
+				os.Exit(1)
 			}
 		},
-	}
-	new
-
-	c.script.AddCommand(&cobra.Command{
-		Use: name,
-		Short: usg,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmdFunc(c)
-		},
 	})
-}
-
-func (c *Commander) AddCron(name, usg string, cmdFunc CmdFunc) {
-
 }

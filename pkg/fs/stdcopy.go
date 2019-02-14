@@ -93,8 +93,8 @@ func NewStdWriter(w io.Writer, t StdType) io.Writer {
 // `written` will hold the total number of bytes written to `dstout` and `dsterr`.
 func (f *Fs) StdCopy(dstout, dsterr io.Writer, src io.Reader) (written int64, err error) {
 	var (
-		buf= make([]byte, startingBufLen)
-		bufLen= len(buf)
+		buf       = make([]byte, startingBufLen)
+		bufLen    = len(buf)
 		nr, nw    int
 		er, ew    error
 		out       io.Writer

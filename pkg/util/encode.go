@@ -10,33 +10,33 @@ import (
 	"strings"
 )
 
-func  JsonSettings() []byte {
+func JsonSettings() []byte {
 	return (toPrettyJson(viper.AllSettings()))
 }
 
-func  JsonSettingsString() string {
+func JsonSettingsString() string {
 	return (toPrettyJsonString(viper.AllSettings()))
 }
 
-func  YamlSettings() []byte {
+func YamlSettings() []byte {
 	bits, err := yaml.Marshal(viper.AllSettings())
-	c.Panic(err, "failed to unmarshal config to yaml")
+	Panic(err, "failed to unmarshal config to yaml")
 	return bits
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func  toPrettyJsonString(obj interface{}) string {
+func toPrettyJsonString(obj interface{}) string {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return fmt.Sprintf("%s", output)
 }
 
 // toPrettyJson encodes an item into a pretty (indented) JSON string
-func  toPrettyJson(obj interface{}) []byte {
+func toPrettyJson(obj interface{}) []byte {
 	output, _ := json.MarshalIndent(obj, "", "  ")
 	return output
 }
 
-func  AsCSV(val string) ([]string, error) {
+func AsCSV(val string) ([]string, error) {
 	if val == "" {
 		return []string{}, nil
 	}
@@ -76,7 +76,7 @@ func AsMap(val string) (map[string]string, error) {
 var validBoolT = []string{"Y", "y", "t", "T"}
 var validBoolF = []string{"N", "n", "f", "F"}
 
-func  AsBool(s string) bool {
+func AsBool(s string) bool {
 	for _, v := range validBoolT {
 		if s == v {
 			return true
@@ -87,6 +87,6 @@ func  AsBool(s string) bool {
 			return false
 		}
 	}
-	c.Panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)), "failed to convert string to bool")
+	Panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)), "failed to convert string to bool")
 	return false
 }

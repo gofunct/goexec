@@ -3,20 +3,33 @@ package fs
 import (
 	"bytes"
 	"github.com/Masterminds/sprig"
+	"github.com/gofunct/goexec/pkg/util"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 )
 
-func (f *Fs) ReadInConfigFiles() error {
-
+func (c *Fs) readInConfigFiles() error {
 	if err := filepath.Walk(os.Getenv("PWD"), func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() && info.Name() == "vendor" {
 			return filepath.SkipDir
 		}
 		if filepath.Ext(path) == ".yaml" {
-
+			b, err := ioutil.ReadFile(path)
+			if err != nil {
+				panic(err)
+			}
+			b, err = yaml.Marshal(b)
+			if err != nil {
+				panic(err)
+			}
+			if err := viper.ReadConfig(bytes.NewBuffer(b)); err != nil {
+				panic(err)
+			}
 		}
 		return nil
 	}); err != nil {
@@ -28,9 +41,9 @@ func (f *Fs) ReadInConfigFiles() error {
 func (c *Fs) Render(s string) string {
 	if strings.Contains(s, "{{") {
 		t, err := template.New("").Funcs(sprig.GenericFuncMap()).Parse(s)
-		c.Panic(err, "failed to render string")
+		util.Panic(err, "failed to render string")
 		buf := bytes.NewBuffer(nil)
-		c.Panic(t.Execute(buf, c.AllSettings()), "failed to render string")
+		util.Panic(t.Execute(buf, c.AllSettings()), "failed to render string")
 		return buf.String()
 	}
 	return s
@@ -44,7 +57,7 @@ func (c *Fs) Sync() {
 	for k, v := range c.AllSettings() {
 		val, ok := v.(string)
 		if ok {
-			c.PrintErr(os.Setenv(k, val), "failed to bind config to env variable")
+			util.PrintErr(os.Setenv(k, val), "failed to bind config to env variable")
 		}
 	}
 }

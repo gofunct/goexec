@@ -3,7 +3,8 @@ module github.com/gofunct/goexec
 require (
 	github.com/Masterminds/sprig v2.17.1+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v1.13.1
+	github.com/docker/docker v1.13.1 // indirect
+	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gofunct/gocfg v0.0.0-20190211231515-8f83d8838a3a // indirect
 	github.com/gofunct/pb v0.0.0-20190208013516-51958b5486d5 // indirect
 	github.com/hashicorp/go-getter v1.0.2
