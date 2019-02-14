@@ -1,2 +1,3 @@
-
-
+# Configurations for {{ .app }}-exec must be named goexec.(json or yaml)
+# All config files with this name will be loaded from the current working directory regardless of their placement
+# Config files may be used to render templated scripts added to {{ .app }}-exec

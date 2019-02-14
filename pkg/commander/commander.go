@@ -2,7 +2,6 @@ package commander
 
 import (
 	"fmt"
-	sv2 "github.com/Masterminds/semver"
 	"github.com/gofunct/goexec/pkg/commands"
 	"github.com/gofunct/goexec/pkg/exec"
 	"github.com/gofunct/goexec/pkg/util"
@@ -16,6 +15,7 @@ type Commander struct {
 }
 
 func NewCommander(name, usg string) *Commander {
+	util.Panic(util.InitConfig(), "failed to initialize configuration: %s", "")
 	cmder := &Commander{
 		root: &cobra.Command{
 			Use:   name,
@@ -65,11 +65,7 @@ func (c *Commander) AddDescription(s string) {
 }
 
 func (c *Commander) AddVersion(s string) {
-	v, err := sv2.NewVersion(s)
-	if err != nil {
-		util.PrintErr(err, "failed to create semantic version from: %v\n", s)
-	}
-	c.root.Version = fmt.Sprintf("%s", v)
+	c.root.Version = fmt.Sprintf("%s", s)
 	util.V.Set("version", c.root.Version)
 }
 

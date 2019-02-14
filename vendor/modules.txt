@@ -1,9 +1,9 @@
+# github.com/Masterminds/goutils v1.1.0
+github.com/Masterminds/goutils
 # github.com/Masterminds/semver v1.4.2
 github.com/Masterminds/semver
-# github.com/Masterminds/sprig v2.17.1+incompatible
+# github.com/Masterminds/sprig v2.18.0+incompatible
 github.com/Masterminds/sprig
-# github.com/aokoli/goutils v1.1.0
-github.com/aokoli/goutils
 # github.com/aws/aws-sdk-go v1.16.12
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/credentials
@@ -41,10 +41,15 @@ github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
 # github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 github.com/bgentry/go-netrc/netrc
+# github.com/elazarl/go-bindata-assetfs v1.0.0
+github.com/elazarl/go-bindata-assetfs
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
+# github.com/gofunct/fsctl v0.0.0-20190214214804-41629abcc460
+github.com/gofunct/fsctl
+github.com/gofunct/fsctl/util
 # github.com/google/uuid v1.1.0
 github.com/google/uuid
 # github.com/hashicorp/go-cleanhttp v0.5.0

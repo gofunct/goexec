@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"github.com/gofunct/goexec/pkg/util"
 	"io"
+	"os"
 	osexec "os/exec"
 	"strings"
 	"syscall"
@@ -101,12 +102,14 @@ func New() Interface {
 
 // Command is part of the Interface interface.
 func (executor *executor) Command(script string) Cmd {
-	return (*cmdWrapper)(osexec.Command("bash", "-c", script))
+	c := (*cmdWrapper)(osexec.Command("bash", "-c", script))
+	return c
 }
 
 // CommandContext is part of the Interface interface.
 func (executor *executor) CommandContext(ctx context.Context, script string) Cmd {
-	return (*cmdWrapper)(osexec.CommandContext(ctx, "bash", "-c", script))
+	c := (*cmdWrapper)(osexec.CommandContext(ctx, "bash", "-c", script))
+	return c
 }
 
 // LookPath is part of the Interface interface
@@ -144,16 +147,61 @@ func (cmd *cmdWrapper) SetEnv(env []string) {
 }
 
 func (cmd *cmdWrapper) StdoutPipe() (io.ReadCloser, error) {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	r, err := (*osexec.Cmd)(cmd).StdoutPipe()
 	return r, handleError(err)
 }
 
 func (cmd *cmdWrapper) StderrPipe() (io.ReadCloser, error) {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	r, err := (*osexec.Cmd)(cmd).StderrPipe()
 	return r, handleError(err)
 }
 
 func (cmd *cmdWrapper) Start() error {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	err := (*osexec.Cmd)(cmd).Start()
 	return handleError(err)
 }
@@ -165,18 +213,63 @@ func (cmd *cmdWrapper) Wait() error {
 
 // Run is part of the Cmd interface.
 func (cmd *cmdWrapper) Run() error {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	err := (*osexec.Cmd)(cmd).Run()
 	return handleError(err)
 }
 
 // CombinedOutput is part of the Cmd interface.
 func (cmd *cmdWrapper) CombinedOutput() ([]byte, error) {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	out, err := (*osexec.Cmd)(cmd).CombinedOutput()
 	out, _ = json.Marshal(out)
 	return out, handleError(err)
 }
 
 func (cmd *cmdWrapper) Output() ([]byte, error) {
+	if cmd.Env == nil {
+		cmd.SetEnv(os.Environ())
+	}
+	if cmd.Dir == "" {
+		cmd.SetDir(os.Getenv("PWD"))
+	}
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	out, err := (*osexec.Cmd)(cmd).Output()
 	out, _ = json.Marshal(out)
 	return out, handleError(err)

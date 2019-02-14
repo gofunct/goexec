@@ -15,6 +15,7 @@ var (
 	BlueString = color.New(color.FgBlue).SprintfFunc()
 	ColoredOut = color.Output
 	ColoredErr = color.Error
+	GreenStringf = color.New(color.FgGreen).SprintfFunc()
 )
 
 func Printf(format string, args ...interface{}) {
@@ -34,7 +35,7 @@ func Panic(err error, format string, msgs ...interface{}) {
 
 func PrintErr(err error, format string, msgs ...interface{}) {
 	if err != nil {
-		printerror(errors.Wrapf(err, format, msgs).Error())
+		errorf("ERROR: %s\n", errors.Wrapf(err, format, msgs))
 	}
 }
 

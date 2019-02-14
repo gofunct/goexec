@@ -12,7 +12,6 @@ import (
 func init() {
 	V = viper.New()
 	V.AutomaticEnv()
-	Panic(InitConfig(), "failed to initialize configuration: %s", "")
 }
 
 var (
@@ -23,7 +22,7 @@ func InitConfig() error {
 	if err := filepath.Walk(os.Getenv("PWD"), func(path string, info os.FileInfo, err error) error {
 		PrintErr(err, "prevent panic by handling failure accessing a path %q: %v\n", path)
 		if info.IsDir() && info.Name() == "vendor" {
-			Printf("skipping a dir while finding config files without errors: %+v\n", info.Name())
+			Printf("skipping a dir while finding config files: %+v\n\n", info.Name())
 			return filepath.SkipDir
 		}
 		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".json" && info.Name() == "goexec" {
