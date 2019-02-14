@@ -15,27 +15,28 @@
 package commands
 
 import (
+	"github.com/gofunct/goexec/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 // debugCmd represents the debug command
 var DebugCmd = &cobra.Command{
-	Use:   "debug",
-	Short: "debug flags or current configuration",
+	Use:   util.BlueString("%s", "debug"),
+	Short: util.BlueString("%s", "debug flags or current configuration"),
 }
 
 var cfgDebug = &cobra.Command{
-	Use:   "config",
-	Short: "debug configuration settings",
+	Use:   util.BlueString("%s", "config"),
+	Short: util.BlueString("%s", "debug configuration settings"),
 	Run: func(cmd *cobra.Command, args []string) {
 		viper.Debug()
 	},
 }
 
 var flagDebug = &cobra.Command{
-	Use:   "flags",
-	Short: "debug current flag settings",
+	Use:   util.BlueString("%s", "flags"),
+	Short: util.BlueString("%s", "debug current flag settings"),
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Root().DebugFlags()
 	},
@@ -43,5 +44,4 @@ var flagDebug = &cobra.Command{
 
 func init() {
 	DebugCmd.AddCommand(cfgDebug, flagDebug)
-
 }

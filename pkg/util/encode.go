@@ -20,7 +20,7 @@ func JsonSettingsString() string {
 
 func YamlSettings() []byte {
 	bits, err := yaml.Marshal(viper.AllSettings())
-	Panic(err, "failed to unmarshal config to yaml")
+	Panic(err)
 	return bits
 }
 
@@ -87,6 +87,6 @@ func AsBool(s string) bool {
 			return false
 		}
 	}
-	Panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)), "failed to convert string to bool")
+	Panic(errors.New(fmt.Sprintf("cannot convert string to bool. valid inputs:\ntrue: %s\nfalse: %s", validBoolT, validBoolF)))
 	return false
 }

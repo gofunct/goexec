@@ -18,8 +18,11 @@ package exec
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/spf13/viper"
 	"io"
 	osexec "os/exec"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -133,6 +136,10 @@ func (cmd *cmdWrapper) SetStderr(out io.Writer) {
 }
 
 func (cmd *cmdWrapper) SetEnv(env []string) {
+	for _, v := range env {
+		e := strings.Split(v, "=")
+		viper.SetDefault(strings.ToLower(e[0]), e[1])
+	}
 	cmd.Env = env
 }
 
@@ -165,11 +172,13 @@ func (cmd *cmdWrapper) Run() error {
 // CombinedOutput is part of the Cmd interface.
 func (cmd *cmdWrapper) CombinedOutput() ([]byte, error) {
 	out, err := (*osexec.Cmd)(cmd).CombinedOutput()
+	out, _ = json.Marshal(out)
 	return out, handleError(err)
 }
 
 func (cmd *cmdWrapper) Output() ([]byte, error) {
 	out, err := (*osexec.Cmd)(cmd).Output()
+	out, _ = json.Marshal(out)
 	return out, handleError(err)
 }
 
