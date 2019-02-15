@@ -121,55 +121,7 @@ echo "hello {{ .name }}" >> name.txt
 
 it will create a name.txt file containing "Coleman Word"
 
-Here is a short list of template function examples that can be embedded in a script:
-(Generating uuid, self-signed certificates, rsa private keys, and more can be rendered at runtime but not listed below) 
-
-Semantic Versioning:
-`{{ semverCompare "1.2.3" "1.2.3" }}`:  `true`
-
-		`{{ semverCompare "^1.2.0" "1.2.3" }}`: `true`
-
-		`{{ semverCompare "^1.2.0" "2.2.3" }}`: `false`
-
-Deriving Passwords: 
-	`{{derivePassword 1 "long" "password" "user" "example.com"}}`:    "ZedaFaxcZaso9*"
-
-		`{{derivePassword 2 "long" "password" "user" "example.com"}}`:    "Fovi2@JifpTupx"
-
-		`{{derivePassword 1 "maximum" "password" "user" "example.com"}}`: "pf4zS1LjCg&LjhsZ7T2~"
-
-		`{{derivePassword 1 "medium" "password" "user" "example.com"}}`:  "ZedJuz8$"
-
-		`{{derivePassword 1 "basic" "password" "user" "example.com"}}`:   "pIS54PLs"
-
-		`{{derivePassword 1 "short" "password" "user" "example.com"}}`:   "Zed5"
-
-		`{{derivePassword 1 "pin" "password" "user" "example.com"}}`:     "6685",
-
-String Manipulation:
-{{trim "   hello    "}}:                                                            hello
-
-{{trimAll "$" "$5.00"}}:                                                          5.00
-
-{{trimSuffix "-" "hello-"}}:                                                        hello
-
-{{upper "hello"}}:                                                                  HELLO
-
-{{lower "HELLO"}}:                                                                  hello
-
-{{title "hello world"}}:                                                            Hello World
-
-{{untitle "Hello World"}}:                                                          hello world
-
-{{repeat 3 "hello"}}:                                                               hellohellohello
-
-{{substr 0 5 "hello world"}}:                                                       hello
-
-{{nospace "hello w o r l d"}}:                                                      helloworld
-
-{{trunc 5 "hello world"}}:                                                          hello
-
-{{abbrev 5 "hello world"}}:                                                         he...
+p       he...
 
 {{abbrevboth 5 10 "1234 5678 9123"}}:                                               ...5678...
 
@@ -313,6 +265,100 @@ if you set name: "Coleman Word" in a goexec.yaml file in your current directory 
 echo "hello {{ .name }}" >> name.txt
 
 it will create a name.txt file containing "Coleman Word"
+Here is a short list of template function examples that can be embedded in a script:
+(Generating uuid, self-signed certificates, rsa private keys, and more can be rendered at runtime but not listed below) 
+
+Semantic Versioning:
+`{{ semverCompare "1.2.3" "1.2.3" }}`:  `true`
+
+		`{{ semverCompare "^1.2.0" "1.2.3" }}`: `true`
+
+		`{{ semverCompare "^1.2.0" "2.2.3" }}`: `false`
+
+Deriving Passwords: 
+	`{{derivePassword 1 "long" "password" "user" "example.com"}}`:    "ZedaFaxcZaso9*"
+
+		`{{derivePassword 2 "long" "password" "user" "example.com"}}`:    "Fovi2@JifpTupx"
+
+		`{{derivePassword 1 "maximum" "password" "user" "example.com"}}`: "pf4zS1LjCg&LjhsZ7T2~"
+
+		`{{derivePassword 1 "medium" "password" "user" "example.com"}}`:  "ZedJuz8$"
+
+		`{{derivePassword 1 "basic" "password" "user" "example.com"}}`:   "pIS54PLs"
+
+		`{{derivePassword 1 "short" "password" "user" "example.com"}}`:   "Zed5"
+
+		`{{derivePassword 1 "pin" "password" "user" "example.com"}}`:     "6685",
+
+String Manipulation:
+{{trim "   hello    "}}:                                                            hello
+
+{{trimAll "$" "$5.00"}}:                                                          5.00
+
+{{trimSuffix "-" "hello-"}}:                                                        hello
+
+{{upper "hello"}}:                                                                  HELLO
+
+{{lower "HELLO"}}:                                                                  hello
+
+{{title "hello world"}}:                                                            Hello World
+
+{{untitle "Hello World"}}:                                                          hello world
+
+{{repeat 3 "hello"}}:                                                               hellohellohello
+
+{{substr 0 5 "hello world"}}:                                                       hello
+
+{{nospace "hello w o r l d"}}:                                                      helloworld
+
+{{trunc 5 "hello world"}}:                                                          hello
+
+{{abbrev 5 "hello world"}}:                                                         he...
+
+{{abbrevboth 5 10 "1234 5678 9123"}}:                                               ...5678...
+
+{{initials "First Try"}}:                                                           FT
+
+{{randNumeric 3}}:                                                                  528
+
+{{wrapWith 5 "\t" "Hello World"}}:                                                  Hello	World
+
+{{contains "cat" "catch"}}:                                                         true
+
+{{hasPrefix "cat" "catch"}}:                                                        true
+
+{{cat "hello" "beautiful" "world"}}:                                                hello beautiful world
+
+{{"I Am Henry VIII" | replace " " "-"}}:                                            I-Am-Henry-VIII
+
+{{snakecase "FirstName"}}:                                                          first_name
+
+{{camelcase "http_server"}}:                                                        HttpServer
+
+{{shuffle "hello"}}:                                                                holle
+
+RegExp:
+
+{{regexMatch "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}" "test@acme.com"}}:   true
+
+{{- /*{{regexFindAll "[2,4,6,8]" "123456789"}}*/}}:
+{{regexFind "[a-zA-Z][1-9]" "abcd1234"}}:                                           d1
+
+{{regexReplaceAll "a(x*)b" "-ab-axxb-" "${1}W"}}:                                   -W-xxW-
+
+{{regexReplaceAllLiteral "a(x*)b" "-ab-axxb-" "${1}"}}:                             -${1}-${1}-
+
+{{regexSplit "z+" "pizza" -1}}:                                                     [pi a]
+
+{{if contains "cat" "catch"}}yes{{else}}no{{end}}:   yes
+
+{{1 | plural "one anchovy" "many anchovies"}}:       one anchovy
+
+{{2 | plural "one anchovy" "many anchovies"}}:       many anchovies
+
+{{3 | plural "one anchovy" "many anchovies"}}:       many anchovies
+
+
 
 ## Contributing
 
